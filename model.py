@@ -9,10 +9,15 @@ def main():
     print(df.columns)
 
     # get unique values of 'Location' column
-    locations = df['Location'].unique()
+    locations = df['Location']
+
+    # get scats number
+    scats_numbers = df['SCATS Number']
 
     # Check locations and scats_numbers length is the same
     print(len(locations))
+
+    print(len(scats_numbers))
 
     # Replace HIGH STREET_RD with 'HIGH_STREET_RD'
     locations = [location.replace('HIGH STREET_RD', 'HIGH_STREET_RD') for location in locations]
@@ -27,28 +32,26 @@ def main():
 
     graph = {}
 
-    index = 0
 
-    for location in locations:
-        location_split = location.split(' ')
+    for index,scat in enumerate(scats_numbers):
+            location_split = locations[index].split(' ')
 
-        # WARRIGAL_RD N of HIGH STREET_RD
+            # WARRIGAL_RD N of HIGH STREET_RD
 
-        first_loc = location_split[0]
-        second_loc = location_split[3]
+            intersection = str(scat)
+            direction = location_split[1]
+            first_loc = location_split[0] + "_" + direction
 
-        # Check if graph[first_loc] is an empty list
-        if graph.get(first_loc) == None:
-            graph[first_loc] = [second_loc]
-        else:
-            if second_loc in graph[first_loc]:
-                graph[first_loc].append(second_loc + '_NEXT')
+            # Check if graph[first_loc] is an empty list
+            if graph.get(intersection) == None:
+                graph[intersection] = [first_loc]
             else:
-                graph[first_loc].append(second_loc)
+                if first_loc in graph[intersection]:
+                    pass
+                else:
+                    graph[intersection].append(first_loc)
 
-        print('Added edge from {} to {}'.format(first_loc, second_loc))
-
-        index += 1
+            print('Added edge from {} to {}'.format(first_loc, intersection))
 
     print(graph)
 
