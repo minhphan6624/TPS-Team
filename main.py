@@ -1,5 +1,7 @@
+from tkinter import Tk
 import pandas as pd
 from bfs import bfs
+from app import App
 
 
 def main():
@@ -56,15 +58,14 @@ def main():
 
     print(graph.keys())
 
-    #asks user for nodes (commented out for development purposes)
-    # print("Pick starting Node:")
-    # start = input()
-    start = "3812"
-    # print("Pick end node:")
-    # end = input()
-    end = "3002"
 
-    #calls bfs function
+    app = App(graph)
+    app.run()
+
+    # get input values
+    start, end = app.get_scat_numbers()
+
+    # calls bfs function
     path = bfs(graph, start, end)
 
     if path:
