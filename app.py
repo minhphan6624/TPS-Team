@@ -36,7 +36,9 @@ class EntryObject:
     def __str__(self):
         return self.__repr__()
 class App:
-    def __init__(self):
+
+    def __init__(self, linux):
+        self.linux = linux
         self.graph = self.generate_graph()
         # self.path = path
         self.start_entry = ""
@@ -58,10 +60,14 @@ class App:
         # submit button
         submit_button = Button(self.window, text="Submit", command=self.submit)
         submit_button.grid(row=2, column=0, columnspan=2, pady=20)
-    
+
     def generate_graph(self):
-        # Load in the 'scats_data.csv' file 
-        df = pd.read_csv('data\\scats_data.csv')
+        # Load in the 'scats_data.csv' file
+        file_location = (
+            "./data/scats_data.csv" if self.linux else "data\\scats_data.csv"
+        )
+
+        df = pd.read_csv(file_location)
 
         # Fix location names.
         df['Location'] = df['Location'].replace({
@@ -83,59 +89,67 @@ class App:
         # Check locations and scats_numbers length is the same
         print(f"Locations: {len(locations)}")
         print(f"Longitudes: {len(longitudes)}")
-        
+
         # Compute a seperate dataframe which is all unique rows by Location
         unique_df = df.drop_duplicates(subset=['Location'])
 
         graph = {}
 
         for index,scat in enumerate(scats_numbers):
-                location_split = locations[index].split(' ')
+            location_split = locations[index].split(" ")
 
-                longitude = longitudes[index]
-                latitude = latitudes[index]
+            longitude = longitudes[index]
+            latitude = latitudes[index]
 
-                # WARRIGAL_RD N of HIGH STREET_RD
+            # WARRIGAL_RD N of HIGH STREET_RD
 
-                intersection = str(scat)
-                direction = location_split[1]
-                first_loc = location_split[0] + "_" + direction
+            intersection = str(scat)
+            direction = location_split[1]
+            first_loc = location_split[0] + "_" + direction
 
-                opposite_direction = self.get_opposite_direction(direction)
+            opposite_direction = self.get_opposite_direction(direction)
 
-                search_str = f"{location_split[0]} {opposite_direction}".lower()
+            search_str = f"{location_split[0]} {opposite_direction}".lower()
 
-                # Search the unique dataframe for a 'Location' that contains the first location and direction
-                first_loc_df = unique_df[(unique_df['Location'].str.lower().str.contains(search_str)) & (unique_df['SCATS Number'] != scat)]
+            # Search the unique dataframe for a 'Location' that contains the first location and direction
+            first_loc_df = unique_df[
+                (unique_df["Location"].str.lower().str.contains(search_str))
+                & (unique_df["SCATS Number"] != scat)
+            ]
 
-                closest_scat = None
-                min_distance = float('inf')
+            closest_scat = None
+            min_distance = float("inf")
 
-                # Find the closest SCAT based on longitude and latitude
-                for _, row in first_loc_df.iterrows():
-                    dist = math.sqrt((row['NB_LONGITUDE'] - longitude)**2 + (row['NB_LATITUDE'] - latitude)**2)
-                    if dist < min_distance:
-                        min_distance = dist
-                        closest_scat = row['SCATS Number']
+            # Find the closest SCAT based on longitude and latitude
+            for _, row in first_loc_df.iterrows():
+                dist = math.sqrt(
+                    (row["NB_LONGITUDE"] - longitude) ** 2
+                    + (row["NB_LATITUDE"] - latitude) ** 2
+                )
+                if dist < min_distance:
+                    min_distance = dist
+                    closest_scat = row["SCATS Number"]
 
-                entry = EntryObject(first_loc, first_loc_df['SCATS Number'].values, closest_scat)
+            entry = EntryObject(
+                first_loc, first_loc_df["SCATS Number"].values, closest_scat
+            )
 
-                # Check if graph[first_loc] is an empty list
-                if graph.get(intersection) == None:
-                    graph[intersection] = [entry]
-                else:
-                    # Check if the entry is already in the list
-                    if entry not in graph[intersection]:
-                        graph[intersection].append(entry)
+            # Check if graph[first_loc] is an empty list
+            if graph.get(intersection) == None:
+                graph[intersection] = [entry]
+            else:
+                # Check if the entry is already in the list
+                if entry not in graph[intersection]:
+                    graph[intersection].append(entry)
 
-                #print('Added edge from {} to {}'.format(first_loc, intersection))
+            # print('Added edge from {} to {}'.format(first_loc, intersection))
 
         print(graph)
 
         print("[+] Graph generated successfully")
 
         return graph
-    
+
     def get_opposite_direction(self, direction):
         # Define a dictionary mapping each direction to its opposite
         opposites = {
@@ -144,14 +158,14 @@ class App:
             'NE': 'SW', 'SW': 'NE',
             'NW': 'SE', 'SE': 'NW'
         }
-        
+
         # Return the opposite direction using the dictionary
         return opposites.get(direction, None)
 
     def run(self):
         # run app
         self.window.mainloop()
-    
+
     def get_scat_numbers(self):
         start = self.start_entry.get()
         end = self.end_entry.get()
