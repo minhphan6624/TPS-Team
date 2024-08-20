@@ -43,9 +43,11 @@ class EntryObject:
         return self.__repr__()
 
 class MainWindow(QMainWindow):
-    def __init__(self):
+    def __init__(self,linux):
+        self.linux = linux
         self.app = QApplication(sys.argv)
         super(MainWindow, self).__init__()
+
 
         self.graph = self.generate_graph()
         self.start_entry = ""
@@ -90,8 +92,12 @@ class MainWindow(QMainWindow):
 
     
     def generate_graph(self):
-        # Load in the 'scats_data.csv' file 
-        df = pd.read_csv('data\\scats_data.csv')
+        # Load in the 'scats_data.csv' file
+        file_location = (
+            "./data/scats_data.csv" if self.linux else "data\\scats_data.csv"
+        )
+
+        df = pd.read_csv(file_location)
 
         # Fix location names.
         df['Location'] = df['Location'].replace({
@@ -113,7 +119,7 @@ class MainWindow(QMainWindow):
         # Check locations and scats_numbers length is the same
         print(f"Locations: {len(locations)}")
         print(f"Longitudes: {len(longitudes)}")
-        
+
         # Compute a seperate dataframe which is all unique rows by Location
         unique_df = df.drop_duplicates(subset=['Location'])
 
@@ -121,36 +127,42 @@ class MainWindow(QMainWindow):
            
 
         for index,scat in enumerate(scats_numbers):
-                location_split = locations[index].split(' ')
+            location_split = locations[index].split(" ")
 
-                longitude = longitudes[index]
-                latitude = latitudes[index]
+            longitude = longitudes[index]
+            latitude = latitudes[index]
 
-                # WARRIGAL_RD N of HIGH STREET_RD
+            # WARRIGAL_RD N of HIGH STREET_RD
 
-                intersection = str(scat)
-                direction = location_split[1]
-                first_loc = location_split[0] + "_" + direction
+            intersection = int(scat)
+            direction = location_split[1]
 
-                opposite_direction = self.get_opposite_direction(direction)
+            opposite_direction = self.get_opposite_direction(direction)
 
-                search_str = f"{location_split[0]} {opposite_direction}".lower()
+            search_str = f"{location_split[0]} {opposite_direction}".lower()
 
-                # Search the unique dataframe for a 'Location' that contains the first location and direction
-                first_loc_df = unique_df[(unique_df['Location'].str.lower().str.contains(search_str)) & (unique_df['SCATS Number'] != scat)]
+            # Search the unique dataframe for a 'Location' that contains the first location and direction
+            first_loc_df = unique_df[
+                (unique_df["Location"].str.lower().str.contains(search_str))
+                & (unique_df["SCATS Number"] != scat)
+            ]
 
-                closest_scat = None
-                min_distance = float('inf')
+            closest_scat = None
+            min_distance = float("inf")
 
-                # Find the closest SCAT based on longitude and latitude
-                for _, row in first_loc_df.iterrows():
-                    dist = math.sqrt((row['NB_LONGITUDE'] - longitude)**2 + (row['NB_LATITUDE'] - latitude)**2)
-                    if dist < min_distance:
-                        min_distance = dist
-                        closest_scat = row['SCATS Number']
+            # Find the closest SCAT based on longitude and latitude
+            for _, row in first_loc_df.iterrows():
+                dist = math.sqrt(
+                    (row["NB_LONGITUDE"] - longitude) ** 2
+                    + (row["NB_LATITUDE"] - latitude) ** 2
+                )
+                if dist < min_distance:
+                    min_distance = dist
+                    closest_scat = row["SCATS Number"]
 
-                entry = EntryObject(first_loc, first_loc_df['SCATS Number'].values, closest_scat)
+            entry = closest_scat
 
+            if entry is not None:
                 # Check if graph[first_loc] is an empty list
                 if graph.get(intersection) == None:
                     graph[intersection] = [entry]
@@ -159,14 +171,16 @@ class MainWindow(QMainWindow):
                     if entry not in graph[intersection]:
                         graph[intersection].append(entry)
 
-                #print('Added edge from {} to {}'.format(first_loc, intersection))
+            # print('Added edge from {} to {}'.format(first_loc, intersection))
 
         print(graph)
 
         print("[+] Graph generated successfully")
 
+        # Convert graph to be an object
+
         return graph
-    
+
     def get_opposite_direction(self, direction):
         # Define a dictionary mapping each direction to its opposite
         opposites = {
@@ -175,7 +189,7 @@ class MainWindow(QMainWindow):
             'NE': 'SW', 'SW': 'NE',
             'NW': 'SE', 'SE': 'NW'
         }
-        
+
         # Return the opposite direction using the dictionary
         return opposites.get(direction, None)
 
@@ -196,10 +210,7 @@ class MainWindow(QMainWindow):
         print(f"End SCAT Number: {end}")
 
         # calls bfs function
-        path = bfs.bfs(self.graph, start, end)
+        path = bfs.bfs(self.graph, int(start), int(end))
 
-        if path:
-            print('Path from {} to {}:'.format(start, end))
-            print(' -> '.join(path))
-        else:
-            print('No path found from {} to {}'.format(start, end))        
+        print("Path is below...")
+        print(path)

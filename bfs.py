@@ -26,7 +26,8 @@ def bfs(graph, start_node, end_node):
             return path
 
         # Get all adjacent nodes of the current node
-        for neighbor in graph.get(current_node, []):
+        neighbors = graph.get(current_node, [])
+        for neighbor in neighbors:
             if neighbor not in visited:
                 # If the neighbor hasn't been visited, add it to the queue and mark it as visited
                 queue.append(neighbor)
