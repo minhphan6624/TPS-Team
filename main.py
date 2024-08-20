@@ -2,11 +2,13 @@
 import sys
 sys.dont_write_bytecode = True
 
-from app import App
+from app import MainWindow
+from PyQt5.QtWidgets import *
+
 
 def main():
-    app = App()
-    app.run()
+    w = MainWindow()
+    w.run()
 
 if __name__ == '__main__':
     main()

@@ -1,7 +1,13 @@
-from tkinter import *
+# from tkinter import *
+from PyQt5.QtWidgets import QApplication, QMainWindow
+from PyQt5 import QtWebEngineWidgets, QtCore
+from pathlib import Path
 import pandas as pd
 import json
 import math
+import folium as folium
+import sys
+
 
 import bfs as bfs
 
@@ -35,29 +41,53 @@ class EntryObject:
     
     def __str__(self):
         return self.__repr__()
-class App:
+
+class MainWindow(QMainWindow):
     def __init__(self):
+        self.app = QApplication(sys.argv)
+        super(MainWindow, self).__init__()
+
         self.graph = self.generate_graph()
-        # self.path = path
         self.start_entry = ""
         self.end_entry = ""
 
-        # create the window
-        self.window = Tk()
-        self.window.title("TrafficPredictionSystem")
+        # pyqt window 
+        self.setWindowTitle("TrafficPredictionSystem")
+        self.setGeometry(160, 70, 1200, 700)
 
-        # create fields
-        # start input
-        Label(self.window, text="Start SCAT Number:").grid(row=0, column=0, padx=10, pady=10)
-        self.start_entry = Entry(self.window)
-        self.start_entry.grid(row=0, column=1, padx=10, pady=10)
-        # end input
-        Label(self.window, text="End SCAT Number:").grid(row=1, column=0, padx=10, pady=10)
-        self.end_entry = Entry(self.window)
-        self.end_entry.grid(row=1, column=1, padx=10, pady=10)
-        # submit button
-        submit_button = Button(self.window, text="Submit", command=self.submit)
-        submit_button.grid(row=2, column=0, columnspan=2, pady=20)
+        # # create the window
+        # self.window = Tk()
+        # self.window.title("TrafficPredictionSystem")
+
+        # # create fields
+        # # start input
+        # Label(self.window, text="Start SCAT Number:").grid(row=0, column=0, padx=10, pady=10)
+        # self.start_entry = Entry(self.window)
+        # self.start_entry.grid(row=0, column=1, padx=10, pady=10)
+        # # end input
+        # Label(self.window, text="End SCAT Number:").grid(row=1, column=0, padx=10, pady=10)
+        # self.end_entry = Entry(self.window)
+        # self.end_entry.grid(row=1, column=1, padx=10, pady=10)
+        # # submit button
+        # submit_button = Button(self.window, text="Submit", command=self.submit)
+        # submit_button.grid(row=2, column=0, columnspan=2, pady=20)
+
+        # create map
+        map = folium.Map(location=(-37.86703, 145.09159), zoom_start=13)
+        map.save("map1.html")
+
+        # read from file (probably could move this to just use the map return from above^)
+        with open('map1.html', 'r') as file:  # r to open file in READ mode
+            map_html = file.read()
+
+        # create map in window
+        map_view = QtWebEngineWidgets.QWebEngineView(self)
+        map_view.setHtml(map_html)
+        self.setCentralWidget(map_view)        
+        
+
+
+
     
     def generate_graph(self):
         # Load in the 'scats_data.csv' file 
@@ -88,6 +118,7 @@ class App:
         unique_df = df.drop_duplicates(subset=['Location'])
 
         graph = {}
+           
 
         for index,scat in enumerate(scats_numbers):
                 location_split = locations[index].split(' ')
@@ -150,7 +181,9 @@ class App:
 
     def run(self):
         # run app
-        self.window.mainloop()
+        # self.window.mainloop()
+        self.show()
+        self.app.exec()
     
     def get_scat_numbers(self):
         start = self.start_entry.get()
