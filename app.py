@@ -5,36 +5,6 @@ import math
 
 import bfs as bfs
 
-class EntryObject:
-    def __init__(self, location, potential_scats, closest_scat):
-        self.location = location
-        self.potential_scats = potential_scats
-        self.closest_scat = closest_scat
-        
-    def __eq__(self, other):
-        if not isinstance(other, EntryObject):
-            return False
-        
-        # Compare the location directly
-        if self.location != other.location:
-            return False
-        
-        # Check if the closest scat is the same
-        if self.closest_scat != other.closest_scat:
-            return False
-        
-        # Compare the potential_scats arrays element-wise
-        return (self.potential_scats == other.potential_scats).all()
-    
-    def __repr__(self):
-        return json.dumps({
-            'location': self.location,
-            'potential_scats': self.potential_scats.tolist(),
-            'closest_scat': self.closest_scat
-        })
-    
-    def __str__(self):
-        return self.__repr__()
 class App:
 
     def __init__(self, linux):
@@ -103,9 +73,8 @@ class App:
 
             # WARRIGAL_RD N of HIGH STREET_RD
 
-            intersection = str(scat)
+            intersection = int(scat)
             direction = location_split[1]
-            first_loc = location_split[0] + "_" + direction
 
             opposite_direction = self.get_opposite_direction(direction)
 
@@ -130,23 +99,24 @@ class App:
                     min_distance = dist
                     closest_scat = row["SCATS Number"]
 
-            entry = EntryObject(
-                first_loc, first_loc_df["SCATS Number"].values, closest_scat
-            )
+            entry = closest_scat
 
-            # Check if graph[first_loc] is an empty list
-            if graph.get(intersection) == None:
-                graph[intersection] = [entry]
-            else:
-                # Check if the entry is already in the list
-                if entry not in graph[intersection]:
-                    graph[intersection].append(entry)
+            if entry is not None:
+                # Check if graph[first_loc] is an empty list
+                if graph.get(intersection) == None:
+                    graph[intersection] = [entry]
+                else:
+                    # Check if the entry is already in the list
+                    if entry not in graph[intersection]:
+                        graph[intersection].append(entry)
 
             # print('Added edge from {} to {}'.format(first_loc, intersection))
 
         print(graph)
 
         print("[+] Graph generated successfully")
+
+        # Convert graph to be an object
 
         return graph
 
@@ -177,10 +147,7 @@ class App:
         print(f"End SCAT Number: {end}")
 
         # calls bfs function
-        path = bfs.bfs(self.graph, start, end)
+        path = bfs.bfs(self.graph, int(start), int(end))
 
-        if path:
-            print('Path from {} to {}:'.format(start, end))
-            print(' -> '.join(path))
-        else:
-            print('No path found from {} to {}'.format(start, end))        
+        print("Path is below...")
+        print(path)
