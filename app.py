@@ -48,34 +48,69 @@ class MainWindow(QMainWindow):
         self.app = QApplication(sys.argv)
         super(MainWindow, self).__init__()
 
+        self.df = None
 
         self.graph = self.generate_graph()
         self.start_entry = ""
         self.end_entry = ""
 
+        self.positions = []
+
         # pyqt window 
         self.setWindowTitle("TrafficPredictionSystem")
         self.setGeometry(160, 70, 1200, 700)
 
-        # # create the window
-        # self.window = Tk()
-        # self.window.title("TrafficPredictionSystem")
+        self.setCentralWidget(self.make_window())        
 
-        # # create fields
-        # # start input
-        # Label(self.window, text="Start SCAT Number:").grid(row=0, column=0, padx=10, pady=10)
-        # self.start_entry = Entry(self.window)
-        # self.start_entry.grid(row=0, column=1, padx=10, pady=10)
-        # # end input
-        # Label(self.window, text="End SCAT Number:").grid(row=1, column=0, padx=10, pady=10)
-        # self.end_entry = Entry(self.window)
-        # self.end_entry.grid(row=1, column=1, padx=10, pady=10)
-        # # submit button
-        # submit_button = Button(self.window, text="Submit", command=self.submit)
-        # submit_button.grid(row=2, column=0, columnspan=2, pady=20)
-
+    def make_window(self):
         # create map
-        map = folium.Map(location=(-37.86703, 145.09159), zoom_start=13)
+        map = folium.Map(location=(-37.86703, 145.09159), zoom_start=13, tiles='CartoDB Positron')
+        # only show street names
+
+        # Unique long/lats for each location
+        longitudes = self.df['NB_LONGITUDE'].unique() 
+        latitudes = self.df['NB_LATITUDE'].unique()
+
+        self.lat_offset = 0.0015
+        self.long_offset = 0.0013
+
+        path = bfs.bfs(self.graph, int(3682), int(4030))
+
+        # Loop through path array and draw line between each pair of points
+        for i in range(len(path) - 1):
+            start = path[i]
+            end = path[i + 1]
+
+            start_lat, start_long = self.get_coords_by_scat(start)
+            end_lat, end_long = self.get_coords_by_scat(end)
+
+            folium.PolyLine([(start_lat, start_long), (end_lat, end_long)], color="red", weight=2.5, opacity=1).add_to(map)
+
+        # Print marker at start and end of path
+        start_lat, start_long = self.get_coords_by_scat(path[0])
+
+        #folium.Marker(location=(start_lat, start_long), popup=f"Start: {path[0]}").add_to(map)
+
+        end_lat, end_long = self.get_coords_by_scat(path[-1])
+
+        #folium.Marker(location=(end_lat, end_long), popup=f"End: {path[-1]}").add_to(map)
+       
+        # 
+        # 
+
+
+        """
+        for index, row in enumerate(longitudes):
+            if index > 500:
+                break
+
+            if latitudes[index] != 0 and row != 0:
+                modified_lat = latitudes[index] + self.lat_offset
+                modified_long = row + self.long_offset
+
+                folium.Marker(location=(modified_lat, modified_long), popup=f"{latitudes[index]}, {row}").add_to(map)
+        """
+
         map.save("map1.html")
 
         # read from file (probably could move this to just use the map return from above^)
@@ -85,43 +120,50 @@ class MainWindow(QMainWindow):
         # create map in window
         map_view = QtWebEngineWidgets.QWebEngineView(self)
         map_view.setHtml(map_html)
-        self.setCentralWidget(map_view)        
-        
 
-
-
+        return map_view
     
+    def get_coords_by_scat(self, scat_number):
+        # Get the row with the SCAT number
+        row = self.df[self.df['SCATS Number'] == scat_number]
+
+        # Get the latitude and longitude from the row
+        latitude = row['NB_LATITUDE'].values[0] + self.lat_offset
+        longitude = row['NB_LONGITUDE'].values[0] + self.long_offset
+
+        return latitude, longitude
+
     def generate_graph(self):
         # Load in the 'scats_data.csv' file
         file_location = (
             "./data/scats_data.csv" if self.linux else "data\\scats_data.csv"
         )
 
-        df = pd.read_csv(file_location)
+        self.df = pd.read_csv(file_location)
 
         # Fix location names.
-        df['Location'] = df['Location'].replace({
+        self.df['Location'] = self.df['Location'].replace({
             'HIGH STREET_RD': 'HIGH_STREET_RD',
             'STUDLEY PARK_RD': 'STUDLEY_PARK_RD',
             'MONT ALBERT_RD': 'MONT_ALBERT_RD'
         }, regex=True)
 
         # get unique values of 'Location' column
-        locations = df['Location']
+        locations = self.df['Location']
 
         # get longitude and latitude
-        longitudes = df['NB_LONGITUDE']
-        latitudes = df['NB_LATITUDE']
+        longitudes = self.df['NB_LONGITUDE']
+        latitudes = self.df['NB_LATITUDE']
 
         # get scats number
-        scats_numbers = df['SCATS Number']
+        scats_numbers = self.df['SCATS Number']
 
         # Check locations and scats_numbers length is the same
         print(f"Locations: {len(locations)}")
         print(f"Longitudes: {len(longitudes)}")
 
         # Compute a seperate dataframe which is all unique rows by Location
-        unique_df = df.drop_duplicates(subset=['Location'])
+        unique_df = self.df.drop_duplicates(subset=['Location'])
 
         graph = {}
            
