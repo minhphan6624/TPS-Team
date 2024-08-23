@@ -1,0 +1,5 @@
+PyQt5==5.15.11
+PyQtWebEngine==5.15.7
+pyqtdarktheme==2.1.0
+folium==0.17.0
+pandas==2.2.1
