@@ -2,13 +2,29 @@
 
 ## Project Assignment – Option A - (Topic 2)
 
+## Running the Project
+
+```
+<your python alias> main.py
+```
+
+You can use `-l` or `--linux` to ensure linux compatibility
+
+## Training the models
+
+```
+python train.py --model model_name
+```
+
+You can choose "lstm", "gru" or "saes" as arguments. The `.h5` weight file was saved in the model folder.
+
+### Summary
+
 ### Traffic Flow Prediction System
 
 - **Due:** 11:59 pm 27/10/2024 (End of Week 12)
 - **Contributes:** 50% of your final result
 - **Group Assignment:** Group of 2-4 students
-
-### Summary
 
 This project requires your group to implement and demonstrate a traffic flow prediction system, TFPS. Accurate and timely traffic flow information is important for traffic authorities (such as VicRoads) to identify congested areas and implement traffic management policies to reduce congestion. It is also critical for route guidance systems (such as Google Maps) to calculate the best routes for their users considering the traffic conditions potentially experienced along each route. Thanks to recent advancements in sensor technologies, traffic authorities can collect massive amounts of traffic data to enable accurate predictions of traffic information (such as traffic flow, speed, travel time, etc.). Your group will be required to develop a solution to utilise historical traffic data for traffic flow prediction. There are many versions of this problem, but we will start with the basic one and suggest several extensions to enable you to do extra research and achieve a higher mark.
 
@@ -73,11 +89,3 @@ The TFPS can use any machine learning technique or combinations of them. You sho
 ### Appendix:
 
 - (If applicable, append any additional material or instructions here.)
-
-## Running the Project
-
-```
-<your python alias> main.py
-```
-
-You can use `-l` or `--linux` to ensure linux compatibility
