@@ -3,3 +3,7 @@ PyQtWebEngine==5.15.7
 pyqtdarktheme==2.1.0
 folium==0.17.0
 pandas==2.2.1
+numpy==2.1
+scikit-learn==0.19
+Tensorflow-gpu==1.5.0
+Keras==2.1.3 
