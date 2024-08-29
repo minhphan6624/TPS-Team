@@ -21,10 +21,12 @@ def process_data(data, lags):
     traffic_flow = scat_data.filter(regex=r'^V\d+$').columns
 
     # Reshape the data from wide to long
-    scat_data = pd.melt(
+    scat_data_long = pd.melt(
         scat_data,
         id_vars=['Date'],
-        value_vars=traffic_flow
+        value_vars=traffic_flow,
+        var_name='Time Period',
+        value_name='Traffic Flow'
     )
 
     print(scat_data)
