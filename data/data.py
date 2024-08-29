@@ -29,7 +29,8 @@ def process_data(data, lags):
         value_name='Traffic Flow'
     )
 
-    print(scat_data)
+    scat_data_long.to_csv('data/scat_data_long.csv', index=False)
+    print(scat_data_long.head())
 
     # # For each scat
     # for scat in unique_scats:
