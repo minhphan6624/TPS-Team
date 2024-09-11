@@ -4,7 +4,6 @@ import sklearn.preprocessing as prep
 from sklearn.model_selection import train_test_split
 from datetime import datetime 
 
-
 def process_data(data, lags):
     df = pd.read_csv(data)
 
