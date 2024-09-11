@@ -5,12 +5,13 @@ import sys
 
 sys.dont_write_bytecode = True
 
+import os
 import warnings
 import argparse
 import numpy as np
 import pandas as pd
-from utilities.data import process_data
-from model import model
+from data import process_data_alt
+import model as model
 from keras.models import Model
 from keras.callbacks import EarlyStopping
 
@@ -31,6 +32,7 @@ def train_model(model, X_train, y_train, name, config):
 
     model.compile(loss="mse", optimizer="rmsprop", metrics=["mape"])
     # early = EarlyStopping(monitor='val_loss', patience=30, verbose=0, mode='auto')
+    
     hist = model.fit(
         X_train,
         y_train,
@@ -39,9 +41,13 @@ def train_model(model, X_train, y_train, name, config):
         validation_split=0.05,
     )
 
-    model.save("model/" + name + ".h5")
+    # if model exists, delete
+    if os.path.exists("saved_models/" + name + ".keras"):
+        os.remove("saved_models/" + name + ".keras")
+
+    model.save("saved_models/" + name + ".keras")
     df = pd.DataFrame.from_dict(hist.history)
-    df.to_csv("model/" + name + " loss.csv", encoding="utf-8", index=False)
+    #df.to_csv("saved_models/" + name + " loss.csv", encoding="utf-8", index=False)
 
 
 def train_seas(models, X_train, y_train, name, config):
@@ -93,23 +99,24 @@ def main(argv):
     parser.add_argument("--model", default="lstm", help="Model to train.")
     args = parser.parse_args()
 
-    lag = 12
-    config = {"batch": 256, "epochs": 600}
-    file1 = "../data/model/train.csv"
-    file2 = "../data/model/test.csv"
-    X_train, y_train, _, _, _ = process_data(file1, file2, lag)
+    lag = 4
+    config = {"batch": 256, "epochs": 50}
+    file = "../../data/traffic_flows/970_E_trafficflow.csv"
 
-    if args.model == "lstm":
-        X_train = np.reshape(X_train, (X_train.shape[0], X_train.shape[1], 1))
-        m = model.get_lstm([12, 64, 64, 1])
+    X_train, y_train, _, _, _, X, y = process_data_alt(file, lag)
+
+    print(X[0])
+
+    if args.model == "lstm":        
+        m = model.get_lstm([lag, 64, 64, 1])
         train_model(m, X_train, y_train, args.model, config)
     if args.model == "gru":
         X_train = np.reshape(X_train, (X_train.shape[0], X_train.shape[1], 1))
-        m = model.get_gru([12, 64, 64, 1])
+        m = model.get_gru([lag, 64, 64, 1])
         train_model(m, X_train, y_train, args.model, config)
     if args.model == "saes":
         X_train = np.reshape(X_train, (X_train.shape[0], X_train.shape[1]))
-        m = model.get_saes([12, 400, 400, 400, 1])
+        m = model.get_saes([lag, 400, 400, 400, 1])
         train_seas(m, X_train, y_train, args.model, config)
 
 
