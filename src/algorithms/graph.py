@@ -14,9 +14,8 @@ LONG_OFFSET = 0.0013
 # Global Variables
 df = None
 
-def generate_graph():
+def load_data():
     global df
-    
     # Load in the 'scats_data.csv' file
     file_location = "../data/scats_data.csv"
 
@@ -28,6 +27,10 @@ def generate_graph():
         'STUDLEY PARK_RD': 'STUDLEY_PARK_RD',
         'MONT ALBERT_RD': 'MONT_ALBERT_RD'
     }, regex=True)
+
+
+def generate_graph():
+    global df
 
     # get unique values of 'Location' column
     locations = df['Location']
@@ -99,6 +102,13 @@ def get_opposite_direction(direction):
     }
 
     return opposites.get(direction, None)
+
+# Get all SCAT numbers
+def get_all_scats():
+    global df
+
+    return df['SCATS Number'].unique()
+
 
 def get_coords_by_scat(scat_number):
     global df

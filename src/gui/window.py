@@ -1,9 +1,9 @@
 # Library Imports
-from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QGridLayout, QLabel, QPushButton
+from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton
 from PyQt5 import QtWebEngineWidgets, QtCore, QtWidgets
+from folium import plugins, IFrame
 import qdarktheme
 import folium as folium
-
 # System Imports
 import sys
 
@@ -27,6 +27,16 @@ def update_map(html):
 
     map_widget.setHtml(html, QtCore.QUrl(''))
 
+def create_marker(scat, map_obj):
+    html = f"""
+        <h4>Scat Number: {scat}</h4>
+        
+        """
+    iframe = folium.IFrame(html=html, width=150, height=100)
+    popup = folium.Popup(iframe, max_width=200)
+
+    folium.Marker(graph_maker.get_coords_by_scat(int(scat)), popup=popup,tooltip=f'Scat {scat}', icon=folium.Icon(color='green')).add_to(map_obj)
+
 def run_pathfinding(start, end):
     global graph
 
@@ -41,6 +51,11 @@ def run_pathfinding(start, end):
     if path is None:
         logger.log("No path found.")
         return
+    
+    # add start and end markers on the map with the displayed scat number
+    create_marker(start, map_obj)
+    create_marker(end, map_obj)
+
 
     for i in range(len(path) - 1):
         start = path[i]
@@ -52,6 +67,7 @@ def run_pathfinding(start, end):
         folium.PolyLine([(start_lat, start_long), (end_lat, end_long)], color="red", weight=2.5, opacity=1).add_to(map_obj)
 
     update_map(map_obj._repr_html_())
+
 
 def make_menu():
     logger.log("Creating menu...")
@@ -93,12 +109,22 @@ def make_menu():
     return menu_widget
 
 def create_map():
-    global map_widget
+    global graph, map_widget
+
+    logger.log("Creating map...")
 
     # create map
     map_obj = folium.Map(location=(-37.86703, 145.09159), zoom_start=13, tiles='CartoDB Positron')
     map_widget = QtWebEngineWidgets.QWebEngineView()
 
+    # Get all scat numbers and long lats
+    scats = graph_maker.get_all_scats()
+
+    logger.log(f"Creating nodes...")
+    for scat in scats:
+        # create map markers for the scats
+        create_marker(scat, map_obj)
+    
     return map_obj
 
 def make_window():
@@ -132,6 +158,7 @@ def run():
     window.setWindowTitle(WINDOW_TITLE)
     window.setGeometry(WINDOW_LOCATION[0], WINDOW_LOCATION[1], WINDOW_SIZE[0], WINDOW_SIZE[1])
 
+    graph_maker.load_data()
     window.setCentralWidget(make_window())
     
     logger.log("Window created.")
