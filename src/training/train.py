@@ -1,14 +1,16 @@
 """
 Train the NN model.
 """
-
 import sys
+
+sys.dont_write_bytecode = True
+
 import warnings
 import argparse
 import numpy as np
 import pandas as pd
 from utilities.data import process_data
-from models import model
+from model import model
 from keras.models import Model
 from keras.callbacks import EarlyStopping
 
