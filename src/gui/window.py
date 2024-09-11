@@ -143,8 +143,8 @@ def make_window():
     map_widget.page().setBackgroundColor(QtCore.Qt.transparent)
 
     # Add map and menu to layout
-    main_layout.addWidget(map_widget)
     main_layout.addWidget(make_menu())
+    main_layout.addWidget(map_widget)
 
     return main_widget
 
