@@ -90,7 +90,36 @@ def process_data(data, lags):
 
         done += 1
 
+def merge_datasets():
+    scat_site = '970'
+    file_directions = ['E', 'N', 'S', 'W']  
+    base_path = 'traffic_flows'  
+
+    #Initialize the dataframes
+    dataframes = []
+
+    for direction in file_directions:
+        file_name = f"{scat_site}_{direction}_trafficflow.csv"
+        file_path = f"{base_path}/{file_name}"
+
+        #Read the file and add the direction column
+        data = pd.read_csv(file_path)
+        data["directions"] = direction
+
+        #Append the dataframe to the list
+        dataframes.append(data)
+
+    #Concatenate the dataframes
+    final_data = pd.concat(dataframes)
+
+    final_data.to_csv(f"new_traffic_flows/{scat_site}_trafficflow.csv", index=False)  
+
+    print(f"Merged files for SCAT site {scat_site}")
+    
+
+
 if __name__ == '__main__':
     data = 'scats_data.csv'
     lags = 5
-    process_data(data, lags)
+    # process_data(data, lags)
+    merge_datasets()
