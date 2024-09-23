@@ -1,4 +1,5 @@
 import pandas as pd
+import os
 
 df = None
 
@@ -90,8 +91,13 @@ def process_data(data, lags):
 
         done += 1
 
+    return unique_scats
+
 def merge_datasets():
     scat_site = '970'
+
+    unique_scats = df['SCATS Number'].unique()
+
     file_directions = ['E', 'N', 'S', 'W']  
     base_path = 'traffic_flows'  
 
@@ -116,10 +122,49 @@ def merge_datasets():
 
     print(f"Merged files for SCAT site {scat_site}")
     
+def merge_all_datasets():
+    base_path = 'traffic_flows'  
+
+    # List all files in the directory
+    all_files = [f for f in os.listdir(base_path) if f.endswith('.csv')]
+
+    # Dictionary to hold DataFrames for each SCAT site
+    scat_site_dfs = {}
+
+    # Loop through each file
+    for file_name in all_files:
+        # Construct the full file path
+        file_path = os.path.join(base_path, file_name)
+        
+        # Get the SCAT site and direction from the file name
+        scat_site = file_name.split('_')[0]
+        direction = file_name.split('_')[1]
+        
+        # Read the file and add the direction column
+        data = pd.read_csv(file_path)
+        data['direction'] = direction
+        
+        # If this SCAT site is not already in the dictionary, initialize a list
+        if scat_site not in scat_site_dfs:
+            scat_site_dfs[scat_site] = []
+        
+        # Append the DataFrame to the SCAT site's list
+        scat_site_dfs[scat_site].append(data)
+
+    for scat_site, df_list in scat_site_dfs.items():
+        
+        # Concatenate all the df for the current SCAT site
+        merged_df = pd.concat(df_list)
+        
+        # Save the merged DataFrame to a new CSV file
+        output_file = f"new_traffic_flows/{scat_site}_trafficflow.csv"
+        merged_df.to_csv(output_file, index=False)
+        
+        print(f"Merged file saved as {output_file}")
 
 
 if __name__ == '__main__':
     data = 'scats_data.csv'
     lags = 5
     # process_data(data, lags)
-    merge_datasets()
+    merge_all_datasets()
