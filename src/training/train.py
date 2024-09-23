@@ -10,7 +10,7 @@ import warnings
 import argparse
 import numpy as np
 import pandas as pd
-from data import process_data_alt
+from data import original_process
 import model as model
 from keras.models import Model
 from keras.callbacks import EarlyStopping
@@ -95,29 +95,16 @@ def train_seas(models, X_train, y_train, name, config):
 
 
 def main(argv):
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--model", default="lstm", help="Model to train.")
-    args = parser.parse_args()
-
     lag = 4
-    config = {"batch": 256, "epochs": 50}
-    file = "../../data/traffic_flows/970_E_trafficflow.csv"
+    config = {"batch": 256, "epochs": 600}
 
-    X_train, y_train, _, _, _, X, y = process_data_alt(file, lag)
+    train_csv = '../../data/traffic_flows/970_E_trafficflow.csv'
 
-    print(X[0])
+    X_train, y_train, _ = original_process(train_csv, lag)
+    X_train = np.reshape(X_train, (X_train.shape[0], X_train.shape[1], 1))
 
-    if args.model == "lstm":        
-        m = model.get_lstm([lag, 64, 64, 1])
-        train_model(m, X_train, y_train, args.model, config)
-    if args.model == "gru":
-        X_train = np.reshape(X_train, (X_train.shape[0], X_train.shape[1], 1))
-        m = model.get_gru([lag, 64, 64, 1])
-        train_model(m, X_train, y_train, args.model, config)
-    if args.model == "saes":
-        X_train = np.reshape(X_train, (X_train.shape[0], X_train.shape[1]))
-        m = model.get_saes([lag, 400, 400, 400, 1])
-        train_seas(m, X_train, y_train, args.model, config)
+    m = model.get_lstm([lag, 64, 64, 1])
+    train_model(m, X_train, y_train, 'lstm', config)
 
 
 if __name__ == "__main__":
