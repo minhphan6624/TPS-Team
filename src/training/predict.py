@@ -78,8 +78,8 @@ def predict_traffic_flow(time_input, model_path, data_path):
 def main():
     # Load in keras model
 
-    for model in train.MODELS:
-        model_path = f"./saved_models/{model}.keras"
+    for model_name in train.MODELS:
+        model_path = f"./saved_models/{model_name}.keras"
         print(model_path)
         cpredict(model_path, train.TEST_CSV)
 
