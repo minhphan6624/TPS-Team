@@ -1,5 +1,6 @@
 import sys
 from tcn import TCN
+import train
 
 sys.dont_write_bytecode = True
 
@@ -76,14 +77,11 @@ def predict_traffic_flow(time_input, model_path, data_path):
 
 def main():
     # Load in keras model
-    train_csv = "../../data/traffic_flows/970_E_trafficflow.csv"
 
-    models = ["gru", "lstm", "saes", "tcn"]
-
-    for model in models:
+    for model in train.MODELS:
         model_path = f"./saved_models/{model}.keras"
         print(model_path)
-        cpredict(model_path, train_csv)
+        cpredict(model_path, train.TEST_CSV)
 
     # original_predict("saved_models/gru.keras", train_csv)
 

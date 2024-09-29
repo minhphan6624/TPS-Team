@@ -63,7 +63,7 @@ def get_tcn(units):
             kernel_size=3,
             dilations=[1, 2, 4, 8],
         )
-    )  # Temporal Convolution Network layer
+    )
     model.add(Dropout(0.2))
     model.add(Dense(units[1], activation="relu"))
     model.add(Dense(units[2], activation="sigmoid"))
