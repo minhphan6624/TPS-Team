@@ -1,13 +1,7 @@
-<<<<<<< HEAD
-"""
-Defination of NN model
-"""
-
-=======
->>>>>>> main
 from keras.layers import Dense, Dropout, Activation
 from keras.layers import LSTM, GRU
 from keras.models import Sequential
+from tcn import TCN
 
 
 def get_lstm(units):
@@ -32,13 +26,8 @@ def get_gru(units):
 
 def _get_sae(inputs, hidden, output):
     model = Sequential()
-<<<<<<< HEAD
-    model.add(Dense(hidden, input_dim=inputs, name="hidden"))
+    model.add(Dense(hidden, input_shape=(inputs,), name="hidden"))
     model.add(Activation("sigmoid"))
-=======
-    model.add(Dense(hidden, input_shape=(inputs,), name='hidden'))
-    model.add(Activation('sigmoid'))
->>>>>>> main
     model.add(Dropout(0.2))
     model.add(Dense(output, activation="sigmoid"))
 
@@ -51,21 +40,12 @@ def get_saes(layers):
     sae3 = _get_sae(layers[2], layers[3], layers[-1])
 
     saes = Sequential()
-<<<<<<< HEAD
-    saes.add(Dense(layers[1], input_dim=layers[0], name="hidden1"))
+    saes.add(Dense(layers[1], input_shape=(layers[0],), name="hidden1"))
     saes.add(Activation("sigmoid"))
     saes.add(Dense(layers[2], name="hidden2"))
     saes.add(Activation("sigmoid"))
     saes.add(Dense(layers[3], name="hidden3"))
     saes.add(Activation("sigmoid"))
-=======
-    saes.add(Dense(layers[1], input_shape=(layers[0], ), name='hidden1'))
-    saes.add(Activation('sigmoid'))
-    saes.add(Dense(layers[2], name='hidden2'))
-    saes.add(Activation('sigmoid'))
-    saes.add(Dense(layers[3], name='hidden3'))
-    saes.add(Activation('sigmoid'))
->>>>>>> main
     saes.add(Dropout(0.2))
     saes.add(Dense(layers[4], activation="sigmoid"))
 
@@ -75,14 +55,6 @@ def get_saes(layers):
 
 
 def get_tcn(units):
-    """TCN (Temporal Convolutional Network)
-    Build TCN Model.
-
-    # Arguments
-        units: List(int), number of input, output, and hidden units.
-    # Returns
-        model: Model, nn model.
-    """
     model = Sequential()
     model.add(
         TCN(
