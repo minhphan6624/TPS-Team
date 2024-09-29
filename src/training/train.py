@@ -1,5 +1,7 @@
 import sys
 
+import tensorflow as tf
+
 sys.dont_write_bytecode = True
 
 import os
@@ -12,15 +14,22 @@ import model as model
 from keras.models import Model
 from keras.callbacks import EarlyStopping
 from keras.layers import Input
+from pathlib import Path
 
 warnings.filterwarnings("ignore")
 
 
-EPOCHS = 300
+EPOCHS = 50
 BATCH_SIZE = 256
 LAG = 4
-TEST_CSV = "../../data/traffic_flows/970_N_trafficflow.csv"
-MODELS = ["gru", "lstm", "saes", "tcn"]
+SCATS_CSV_DIR = "../../data/traffic_flows"
+TEST_CSV = f"{SCATS_CSV_DIR}/970_N_trafficflow.csv"
+MODELS = {
+    "lstm": model.get_lstm([LAG, 64, 64, 1]),
+    "gru": model.get_gru([LAG, 64, 64, 1]),
+    "saes": model.get_saes([LAG, 128, 64, 32, 1]),
+    "tcn": model.get_tcn([LAG, 128, 64, 32, 1]),
+}
 
 
 def train_model(model, X_train, y_train, name, config):
@@ -36,8 +45,8 @@ def train_model(model, X_train, y_train, name, config):
     )
 
     # if model exists, delete
-    if os.path.exists("saved_models/" + name + ".keras"):
-        os.remove("saved_models/" + name + ".keras")
+    if os.path.exists("saved_models/" + str(name) + ".keras"):
+        os.remove("saved_models/" + str(name) + ".keras")
 
     model.save("saved_models/" + name + ".keras")
     df = pd.DataFrame.from_dict(hist.history)
@@ -80,36 +89,77 @@ def train_saes(models, X_train, y_train, name, config):
     train_model(saes, X_train, y_train, name, config)
 
 
-def main(argv):
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--model", help="model name", default="lstm")
-    args = parser.parse_args()
-
+def train_models(model_types, model_prefix, csv):
     config = {"batch": BATCH_SIZE, "epochs": EPOCHS}
 
-    X_train, y_train, _ = original_process(TEST_CSV, LAG)
+    X_train, y_train, _ = original_process(csv, LAG)
 
     X_train = np.reshape(X_train, (X_train.shape[0], X_train.shape[1], 1))
     X_train_saes = np.reshape(X_train, (X_train.shape[0], X_train.shape[1]))
 
-    lstm = model.get_lstm([LAG, 64, 64, 1])
-    gru = model.get_gru([LAG, 64, 64, 1])
-    saes = model.get_saes([LAG, 128, 64, 32, 1])
-    tcn = model.get_tcn([LAG, 128, 64, 32, 1])
+    for model_type in model_types:
+        model_name = (
+            model_prefix + model_type if model_prefix != None or "" else model_type
+        )
 
-    if args.model == "lstm":
-        train_model(lstm, X_train, y_train, "lstm", config)
-    elif args.model == "gru":
-        train_model(gru, X_train, y_train, "gru", config)
-    elif args.model == "saes":
-        train_saes(saes, X_train_saes, y_train, "saes", config)
-    elif args.model == "tcn":
-        train_model(tcn, X_train, y_train, "tcn", config)
-    elif args.model == "all":
-        train_model(lstm, X_train, y_train, "lstm", config)
-        train_model(gru, X_train, y_train, "gru", config)
-        train_saes(saes, X_train_saes, y_train, "saes", config)
-        train_model(tcn, X_train, y_train, "tcn", config)
+        model_instance = MODELS.get(model_type)
+
+        if model_type == "saes":
+            train_saes(
+                model_instance,
+                X_train_saes,
+                y_train,
+                model_name,
+                config,
+            )
+        else:
+            train_model(
+                model_instance,
+                X_train,
+                y_train,
+                model_name,
+                config,
+            )
+
+
+def train_scats(model_types):
+    for path in Path(SCATS_CSV_DIR).iterdir():
+        if path.is_file():
+            name = Path(path).name
+            scats_data = name.split("_")
+            scats_number = scats_data[0]
+            scats_direction = scats_data[1]
+            print(
+                f"------------  SCATS site: {scats_number} | Direction: {scats_direction}  ------------"
+            )
+
+            model_prefix = str.format("{0}_{1}_", scats_number, scats_direction)
+            print(model_types)
+            train_models(model_types, model_prefix, path)
+
+
+def main(argv):
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument(
+        "--model",
+        help="Model names (e.g. lstm gru tcn)",
+        nargs="+",  # This allows multiple model names
+        default=["lstm"],  # Default to a list containing "lstm"
+    )
+
+    # Add scats argument
+    parser.add_argument(
+        "--scats", help="Check if --scats is present", action="store_true"
+    )
+
+    # Parse the arguments
+    args = parser.parse_args()
+
+    if args.scats:
+        train_scats(args.model)
+    else:
+        train_models(args.model, None, TEST_CSV)
 
 
 if __name__ == "__main__":
