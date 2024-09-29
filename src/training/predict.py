@@ -10,15 +10,6 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 
 def plot_results(y_true, y_pred):
-    """Plot
-    Plot the true data and predicted data.
-
-    # Arguments
-        y_true: List/ndarray, ture data.
-        y_pred: List/ndarray, predicted data.
-        names: List, Method names.
-    """
-
     d = '2016-10-1 00:00'
     x = pd.date_range(d, periods=96, freq='15min')
 
@@ -26,7 +17,7 @@ def plot_results(y_true, y_pred):
     ax = fig.add_subplot(111)
 
     ax.plot(x, y_true, label='True Data')
-    ax.plot(x, y_pred, label='LSTM')
+    ax.plot(x, y_pred, label='Model')
         
     plt.legend()
     plt.grid(True)
@@ -53,8 +44,6 @@ def predict_traffic_flow(time_input, model_path, data_path):
     # Create a dictionary to map times to indices
     time_to_index = {time: i for i, time in enumerate(df['15 Minutes'].str.split(' ').str[1])}
     
-    print(time_to_index)
-
     # Find the index for the input time
     if time_input not in time_to_index:
         raise ValueError("Invalid time input. Please use the format 'HH:MM'.")
@@ -78,19 +67,29 @@ def main():
     # Load in keras model
     train_csv = '../../data/traffic_flows/970_E_trafficflow.csv'
 
-    cpredict("saved_models/lstm.keras", train_csv)
+    models = ["gru", "lstm", "saes"]
 
-    #original_predict(train_csv)
+    for model in models:
+        model_path = f"saved_models/{model}.keras"
+        cpredict(model_path, train_csv)
+
+    #original_predict("saved_models/gru.keras", train_csv)
 
 def cpredict(model_path, data_path):
+    model_name = get_model_name(model_path)
+
+    print(f"-------------- {model_name} --------------")
+
     time_input = "08:30"
     predicted_flow = predict_traffic_flow(time_input, model_path, data_path)
     print(f"Predicted traffic flow at {time_input}: {predicted_flow:.2f} vehicles per 15 minutes")
 
-def original_predict(train_csv):
+    print("----------------------------------------")
+
+def original_predict(model_path, train_csv):
     lags = 4
 
-    model = load_model("saved_models/lstm.keras")
+    model = load_model(model_path)
     print("Model loaded successfully!")
 
     X_train, y_train, scaler = original_process(train_csv, lags)
@@ -109,6 +108,9 @@ def original_predict(train_csv):
     # 96 -> 1 day
     print("Predicted 97 -> ", predicted[:96])
     print("Predicted Array -> ", predicted)
+
+def get_model_name(model_path):
+    return model_path.split("/")[-1].split(".")[0].upper()
 
 if __name__ == "__main__":
     main()
