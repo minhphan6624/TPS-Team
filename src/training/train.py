@@ -1,6 +1,5 @@
 import sys
 
-import tensorflow as tf
 
 sys.dont_write_bytecode = True
 
@@ -13,13 +12,12 @@ from data import original_process
 import model as model
 from keras.models import Model
 from keras.callbacks import EarlyStopping
-from keras.layers import Input
 from pathlib import Path
 
 warnings.filterwarnings("ignore")
 
 
-EPOCHS = 50
+EPOCHS = 300
 BATCH_SIZE = 256
 LAG = 4
 SCATS_CSV_DIR = "../../data/traffic_flows"
@@ -34,14 +32,24 @@ MODELS = {
 
 def train_model(model, X_train, y_train, name, config):
     model.compile(loss="mse", optimizer="rmsprop", metrics=["mape"])
-    # early = EarlyStopping(monitor='val_loss', patience=30, verbose=0, mode='auto')
 
+    # Set up EarlyStopping callback
+    early_stopping = EarlyStopping(
+        monitor="val_loss",  # Monitor validation loss
+        patience=30,  # Number of epochs with no improvement after which training will be stopped
+        verbose=1,  # Verbose setting, 1 for output when early stopping kicks in
+        mode="min",  # 'min' for minimizing loss, 'max' for maximizing metric, 'auto' decides automatically
+        restore_best_weights=True,  # Restores model weights from the epoch with the best validation loss
+    )
+
+    # Train the model with EarlyStopping
     hist = model.fit(
         X_train,
         y_train,
         batch_size=config["batch"],
         epochs=config["epochs"],
         validation_split=0.05,
+        callbacks=[early_stopping],  # Include early stopping in the callback list
     )
 
     # if model exists, delete
