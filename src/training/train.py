@@ -30,17 +30,20 @@ MODELS = {
 }
 
 
-def train_model(model, X_train, y_train, name, config):
-    model.compile(loss="mse", optimizer="rmsprop", metrics=["mape"])
-
-    # Set up EarlyStopping callback
-    early_stopping = EarlyStopping(
+def get_early_stopping_callback():
+    return EarlyStopping(
         monitor="val_loss",  # Monitor validation loss
-        patience=30,  # Number of epochs with no improvement after which training will be stopped
+        patience=20,  # Number of epochs with no improvement after which training will be stopped
         verbose=1,  # Verbose setting, 1 for output when early stopping kicks in
         mode="min",  # 'min' for minimizing loss, 'max' for maximizing metric, 'auto' decides automatically
         restore_best_weights=True,  # Restores model weights from the epoch with the best validation loss
     )
+
+
+def train_model(model, X_train, y_train, name, config, print_loss):
+    model.compile(loss="mse", optimizer="rmsprop", metrics=["mape"])
+
+    # Set up EarlyStopping callback
 
     # Train the model with EarlyStopping
     hist = model.fit(
@@ -49,7 +52,7 @@ def train_model(model, X_train, y_train, name, config):
         batch_size=config["batch"],
         epochs=config["epochs"],
         validation_split=0.05,
-        callbacks=[early_stopping],  # Include early stopping in the callback list
+        callbacks=[get_early_stopping_callback()],
     )
 
     # if model exists, delete
@@ -57,11 +60,12 @@ def train_model(model, X_train, y_train, name, config):
         os.remove("saved_models/" + str(name) + ".keras")
 
     model.save("saved_models/" + name + ".keras")
-    df = pd.DataFrame.from_dict(hist.history)
-    df.to_csv("saved_models/" + name + "_loss.csv", encoding="utf-8", index=False)
+    if print_loss:
+        df = pd.DataFrame.from_dict(hist.history)
+        df.to_csv("saved_models/" + name + "_loss.csv", encoding="utf-8", index=False)
 
 
-def train_saes(models, X_train, y_train, name, config):
+def train_saes(models, X_train, y_train, name, config, print_loss):
     temp = X_train
     # early = EarlyStopping(monitor='val_loss', patience=30, verbose=0, mode='auto')
 
@@ -85,6 +89,7 @@ def train_saes(models, X_train, y_train, name, config):
             batch_size=config["batch"],
             epochs=config["epochs"],
             validation_split=0.05,
+            callbacks=[get_early_stopping_callback()],
         )
 
         models[i] = m
@@ -94,10 +99,10 @@ def train_saes(models, X_train, y_train, name, config):
         weights = models[i].get_layer("hidden").get_weights()
         saes.get_layer("hidden%d" % (i + 1)).set_weights(weights)
 
-    train_model(saes, X_train, y_train, name, config)
+    train_model(saes, X_train, y_train, name, config, print_loss)
 
 
-def train_models(model_types, model_prefix, csv):
+def train_models(model_types, model_prefix, csv, print_loss):
     config = {"batch": BATCH_SIZE, "epochs": EPOCHS}
 
     X_train, y_train, _ = original_process(csv, LAG)
@@ -114,19 +119,11 @@ def train_models(model_types, model_prefix, csv):
 
         if model_type == "saes":
             train_saes(
-                model_instance,
-                X_train_saes,
-                y_train,
-                model_name,
-                config,
+                model_instance, X_train_saes, y_train, model_name, config, print_loss
             )
         else:
             train_model(
-                model_instance,
-                X_train,
-                y_train,
-                model_name,
-                config,
+                model_instance, X_train, y_train, model_name, config, print_loss
             )
 
 
@@ -143,7 +140,7 @@ def train_scats(model_types):
 
             model_prefix = str.format("{0}_{1}_", scats_number, scats_direction)
             print(model_types)
-            train_models(model_types, model_prefix, path)
+            train_models(model_types, model_prefix, path, False)
 
 
 def main(argv):
@@ -161,13 +158,17 @@ def main(argv):
         "--scats", help="Check if --scats is present", action="store_true"
     )
 
+    parser.add_argument(
+        "--loss", help="Check if --scats is present", action="store_true"
+    )
+
     # Parse the arguments
     args = parser.parse_args()
 
     if args.scats:
         train_scats(args.model)
     else:
-        train_models(args.model, None, TEST_CSV)
+        train_models(args.model, None, TEST_CSV, True)
 
 
 if __name__ == "__main__":
