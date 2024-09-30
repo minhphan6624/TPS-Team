@@ -44,6 +44,8 @@ def train_model(model, X_train, y_train, name, config, print_loss):
     model.compile(loss="mse", optimizer="rmsprop", metrics=["mape"])
 
     # Set up EarlyStopping callback
+    model_path = "saved_models/" + str(name) + ".keras"
+    model_loss_path = "saved_models/" + name + "_loss.csv"
 
     # Train the model with EarlyStopping
     hist = model.fit(
@@ -56,13 +58,14 @@ def train_model(model, X_train, y_train, name, config, print_loss):
     )
 
     # if model exists, delete
-    if os.path.exists("saved_models/" + str(name) + ".keras"):
-        os.remove("saved_models/" + str(name) + ".keras")
-
-    model.save("saved_models/" + name + ".keras")
-    if print_loss:
+    if os.path.exists(model_path):
+        os.remove(model_path)
+    print(print_loss)
+    if print_loss == True:
         df = pd.DataFrame.from_dict(hist.history)
-        df.to_csv("saved_models/" + name + "_loss.csv", encoding="utf-8", index=False)
+        df.to_csv(model_loss_path, encoding="utf-8", index=False)
+
+    model.save(model_path)
 
 
 def train_saes(models, X_train, y_train, name, config, print_loss):
