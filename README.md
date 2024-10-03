@@ -16,7 +16,8 @@ You can use `-l` or `--linux` to ensure linux compatibility
 python train.py --model model_name
 ```
 
-You can choose "lstm", "gru" or "saes" as arguments. The `.h5` weight file was saved in the model folder.
+You can choose "lstm", "gru", "saes" or "tcn" as arguments. The `.keras` weight file was saved in the model folder.
+You can also do "all" to train all models. 
 
 ### Summary
 
