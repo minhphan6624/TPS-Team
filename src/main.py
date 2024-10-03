@@ -1,5 +1,6 @@
 # System Imports
 import sys
+
 sys.dont_write_bytecode = True
 
 import signal
@@ -11,6 +12,7 @@ import utilities.logger as logger
 # Global Variables
 VERSION = "1.0.0"
 
+
 def main():
     logger.log(f"Launching TPS GUI - Version {VERSION}")
 
@@ -19,9 +21,11 @@ def main():
 
     window.run()
 
+
 def signal_handler(sig, frame):
     logger.log("Exiting TPS GUI.")
     sys.exit(0)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()
