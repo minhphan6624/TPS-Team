@@ -1,5 +1,7 @@
 # System Imports
 import sys
+
+import pandas as pd
 sys.dont_write_bytecode = True
 
 import signal
@@ -11,7 +13,7 @@ import utilities.logger as logger
 # Global Variables
 VERSION = "1.0.0"
 
-def main():
+def main(): 
     logger.log(f"Launching TPS GUI - Version {VERSION}")
 
     # Register Ctrl+C signal handler
