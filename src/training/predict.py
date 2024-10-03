@@ -5,7 +5,7 @@ import train
 sys.dont_write_bytecode = True
 
 from keras.models import load_model
-from sklearn.preprocessing import MinMaxScaler
+from sklearn.preprocessing import MinMaxScaler, OneHotEncoder
 from data import original_process
 import numpy as np
 import pandas as pd
@@ -35,9 +35,8 @@ def plot_results(y_true, y_pred):
     plt.show()
 
 
-def predict_traffic_flow(time_input, model_path, data_path):
+def predict_traffic_flow(time_input, direction_input, model_path, data_path):
     # Load the model
-
     if "tcn" in model_path.lower():
         model = load_model(model_path, custom_objects={"TCN": TCN})
     else:
@@ -46,9 +45,20 @@ def predict_traffic_flow(time_input, model_path, data_path):
     # Load and preprocess the data
     df = pd.read_csv(data_path, encoding="utf-8").fillna(0)
     attr = "Lane 1 Flow (Veh/15 Minutes)"
+    direction_attr = "direction"  # Direction column
 
+    # Normalize traffic flow
     scaler = MinMaxScaler(feature_range=(0, 1)).fit(df[attr].values.reshape(-1, 1))
     flow = scaler.transform(df[attr].values.reshape(-1, 1)).reshape(1, -1)[0]
+
+    # One-hot encode the entire direction column for 8 possible directions
+    encoder = OneHotEncoder(
+        sparse_output=False, categories=[["N", "S", "E", "W", "NE", "NW", "SE", "SW"]]
+    )
+    direction_encoded = encoder.fit_transform(df[direction_attr].values.reshape(-1, 1))
+
+    # Combine flow and direction features (1 for flow + 8 for directions = 9 features)
+    features = np.hstack([flow.reshape(-1, 1), direction_encoded])
 
     # Create a dictionary to map times to indices
     time_to_index = {
@@ -61,29 +71,50 @@ def predict_traffic_flow(time_input, model_path, data_path):
 
     index = time_to_index[time_input]
 
+    # One-hot encode the input direction
+    direction_categories = ["N", "S", "E", "W", "NE", "NW", "SE", "SW"]
+    if direction_input not in direction_categories:
+        raise ValueError(
+            f"Invalid direction input. Valid directions are {direction_categories}"
+        )
+
+    direction_onehot = encoder.transform([[direction_input]])
+
     # Prepare the input for prediction
     lags = 4
     if index < lags:
         raise ValueError("Not enough historical data for the given time.")
 
-    X_pred = flow[index - lags : index].reshape(1, lags, 1)
+    # Extract the last `lags` timesteps of features (flow + direction)
+    X_pred = features[index - lags : index].reshape(
+        1, lags, 9
+    )  # 9 features (flow + directions)
 
-    # Make prediction
-    predicted = model.predict(X_pred)
+    # Overwrite the direction feature in the input with the one-hot encoded direction
+    for i in range(lags):
+        X_pred[0, i, 1:] = direction_onehot
+
+    # Check if the model is SAES and flatten input only if it is
+    if "saes" in model_path.lower():
+        # Flatten the input for SAES model (expects 36 features)
+        X_pred_flat = X_pred.reshape(1, -1)  # Flatten to (1, 36)
+        # Make prediction for SAES
+        predicted = model.predict(X_pred_flat)
+    else:
+        # Keep input shape as (1, 4, 9) for other models
+        predicted = model.predict(X_pred)
+
     predicted = scaler.inverse_transform(predicted.reshape(-1, 1))[0][0]
 
     return predicted
 
 
 def main():
-    # Load in keras model
-
+    # Load Keras models and predict traffic flow including directions
     for model_name in train.MODELS:
         model_path = f"./saved_models/{model_name}.keras"
         print(model_path)
-        cpredict(model_path, train.TEST_CSV)
-
-    # original_predict("saved_models/gru.keras", train_csv)
+        cpredict(model_path, train.TEST_CSV_DIRECTION)
 
 
 def cpredict(model_path, data_path):
@@ -91,10 +122,13 @@ def cpredict(model_path, data_path):
 
     print(f"-------------- {model_name} --------------")
 
-    time_input = "08:30"
-    predicted_flow = predict_traffic_flow(time_input, model_path, data_path)
+    time_input = "11:30"  # Specify the time input for prediction
+    direction_input = "W"  # Specify the direction input for prediction
+    predicted_flow = predict_traffic_flow(
+        time_input, direction_input, model_path, data_path
+    )
     print(
-        f"Predicted traffic flow at {time_input}: {predicted_flow:.2f} vehicles per 15 minutes"
+        f"Predicted traffic flow at {time_input} in direction {direction_input}: {predicted_flow:.2f} vehicles per 15 minutes"
     )
 
     print("----------------------------------------")

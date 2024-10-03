@@ -1,8 +1,4 @@
 import sys
-
-
-sys.dont_write_bytecode = True
-
 import os
 import warnings
 import argparse
@@ -16,29 +12,31 @@ from pathlib import Path
 
 warnings.filterwarnings("ignore")
 
-
+# Hyperparameters
 EPOCHS = 1000
 BATCH_SIZE = 256
 LAG = 4
 SCATS_CSV_DIR = "../../data/traffic_flows"
 TEST_CSV = f"{SCATS_CSV_DIR}/970_N_trafficflow.csv"
 SCATS_CSV_DIR_DIRECTION = "../../data/new_traffic_flows"
-TEST_CSV_DIRECTION = f"{SCATS_CSV_DIR}/970_trafficflow.csv"
+TEST_CSV_DIRECTION = f"{SCATS_CSV_DIR_DIRECTION}/970_trafficflow.csv"
+
+# Models with input shape reflecting 9 features (1 for flow + 8 for direction)
 MODELS = {
-    "lstm": model.get_lstm([LAG, 64, 64, 1]),
-    "gru": model.get_gru([LAG, 64, 64, 1]),
-    "saes": model.get_saes([LAG, 128, 64, 32, 1]),
-    "tcn": model.get_tcn([LAG, 128, 64, 32, 1]),
+    "lstm": model.get_lstm([LAG, 64, 64, 9]),  # 9 features total
+    "gru": model.get_gru([LAG, 64, 64, 9]),
+    "saes": model.get_saes([LAG, 128, 64, 32, 9]),
+    "tcn": model.get_tcn([LAG, 128, 64, 32, 9]),
 }
 
 
 def get_early_stopping_callback():
     return EarlyStopping(
-        monitor="val_loss",  # Monitor validation loss
-        patience=100,  # Number of epochs with no improvement after which training will be stopped
-        verbose=1,  # Verbose setting, 1 for output when early stopping kicks in
-        mode="min",  # 'min' for minimizing loss, 'max' for maximizing metric, 'auto' decides automatically
-        restore_best_weights=True,  # Restores model weights from the epoch with the best validation loss
+        monitor="val_loss",
+        patience=100,
+        verbose=1,
+        mode="min",
+        restore_best_weights=True,
     )
 
 
@@ -62,18 +60,21 @@ def train_model(model, X_train, y_train, name, config, print_loss):
     # if model exists, delete
     if os.path.exists(model_path):
         os.remove(model_path)
-    print(print_loss)
-    if print_loss == True:
+
+    # Save loss history if requested
+    if print_loss:
         df = pd.DataFrame.from_dict(hist.history)
         df.to_csv(model_loss_path, encoding="utf-8", index=False)
 
+    # Save the final trained model
     model.save(model_path)
 
 
 def train_saes(models, X_train, y_train, name, config, print_loss):
-    temp = X_train
-    # early = EarlyStopping(monitor='val_loss', patience=30, verbose=0, mode='auto')
+    # Flatten the X_train for the SAES model
+    X_train_flat = X_train.reshape(X_train.shape[0], -1)  # Flatten the input
 
+    temp = X_train_flat
     for i in range(len(models) - 1):
         if i > 0:
             prev_model = models[i - 1]
@@ -82,7 +83,6 @@ def train_saes(models, X_train, y_train, name, config, print_loss):
             hidden_layer_output = prev_model.get_layer("hidden").output
 
             hidden_layer_model = Model(inputs=input_tensor, outputs=hidden_layer_output)
-
             temp = hidden_layer_model.predict(temp)
 
         m = models[i]
@@ -99,21 +99,27 @@ def train_saes(models, X_train, y_train, name, config, print_loss):
 
         models[i] = m
 
+    # Train the final SAES model
     saes = models[-1]
     for i in range(len(models) - 1):
         weights = models[i].get_layer("hidden").get_weights()
         saes.get_layer("hidden%d" % (i + 1)).set_weights(weights)
 
-    train_model(saes, X_train, y_train, name, config, print_loss)
+    train_model(saes, X_train_flat, y_train, name, config, print_loss)
 
 
 def train_models(model_types, model_prefix, csv, print_loss):
     config = {"batch": BATCH_SIZE, "epochs": EPOCHS}
 
-    X_train, y_train, _ = original_process(csv, LAG)
+    # Process data including direction
+    X_train, y_train, scaler, encoder = original_process(csv, LAG)
 
-    X_train = np.reshape(X_train, (X_train.shape[0], X_train.shape[1], 1))
-    X_train_saes = np.reshape(X_train, (X_train.shape[0], X_train.shape[1]))
+    # Reshape data to accommodate the multi-dimensional input (flow + direction)
+    num_features = X_train.shape[2]  # Determine number of features dynamically
+    X_train = np.reshape(X_train, (X_train.shape[0], X_train.shape[1], num_features))
+
+    # Flatten the features for SAES model
+    X_train_saes = np.reshape(X_train, (X_train.shape[0], -1))
 
     for model_type in model_types:
         model_name = (
@@ -163,9 +169,7 @@ def main(argv):
         "--scats", help="Check if --scats is present", action="store_true"
     )
 
-    parser.add_argument(
-        "--loss", help="Check if --scats is present", action="store_true"
-    )
+    parser.add_argument("--loss", help="Save loss history", action="store_true")
 
     # Parse the arguments
     args = parser.parse_args()
@@ -173,7 +177,7 @@ def main(argv):
     if args.scats:
         train_scats(args.model)
     else:
-        train_models(args.model, None, TEST_CSV, True)
+        train_models(args.model, None, TEST_CSV_DIRECTION, args.loss)
 
 
 if __name__ == "__main__":
