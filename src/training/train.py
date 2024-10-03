@@ -17,11 +17,13 @@ from pathlib import Path
 warnings.filterwarnings("ignore")
 
 
-EPOCHS = 300
+EPOCHS = 1000
 BATCH_SIZE = 256
 LAG = 4
 SCATS_CSV_DIR = "../../data/traffic_flows"
 TEST_CSV = f"{SCATS_CSV_DIR}/970_N_trafficflow.csv"
+SCATS_CSV_DIR_DIRECTION = "../../data/new_traffic_flows"
+TEST_CSV_DIRECTION = f"{SCATS_CSV_DIR}/970_trafficflow.csv"
 MODELS = {
     "lstm": model.get_lstm([LAG, 64, 64, 1]),
     "gru": model.get_gru([LAG, 64, 64, 1]),
@@ -33,7 +35,7 @@ MODELS = {
 def get_early_stopping_callback():
     return EarlyStopping(
         monitor="val_loss",  # Monitor validation loss
-        patience=20,  # Number of epochs with no improvement after which training will be stopped
+        patience=100,  # Number of epochs with no improvement after which training will be stopped
         verbose=1,  # Verbose setting, 1 for output when early stopping kicks in
         mode="min",  # 'min' for minimizing loss, 'max' for maximizing metric, 'auto' decides automatically
         restore_best_weights=True,  # Restores model weights from the epoch with the best validation loss
