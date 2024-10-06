@@ -48,6 +48,9 @@ def run_pathfinding(start, end):
 
     path = bfs.bfs(graph, int(start), int(end))
 
+    distance = 0 # in km
+    time = 0 # in minutes
+
     if path is None:
         logger.log("No path found.")
         return
@@ -64,9 +67,19 @@ def run_pathfinding(start, end):
         start_lat, start_long = graph_maker.get_coords_by_scat(start)
         end_lat, end_long = graph_maker.get_coords_by_scat(end)
 
+        distance += graph_maker.calculate_distance(start, end)
+        time += 0.5 #add traffic light delay
+
         folium.PolyLine([(start_lat, start_long), (end_lat, end_long)], color="red", weight=2.5, opacity=1).add_to(map_obj)
 
+    #calculate time taken in minutes 
+    time += distance
+    print(f"Distance: {round(distance,2)} km")
+    print(f"Time: {round(time,2)} minutes")
+
+
     update_map(map_obj._repr_html_())
+
 
 
 def make_menu():
