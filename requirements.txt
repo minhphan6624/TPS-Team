@@ -1,6 +1,6 @@
 PyQt5
 PyQtWebEngine
-pyqtdarktheme
+Pyqtdarktheme
 folium
 pandas
 numpy

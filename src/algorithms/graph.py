@@ -129,3 +129,18 @@ def get_coords_by_scat(scat_number):
     longitude = row["NB_LONGITUDE"].values[0] + LONG_OFFSET
 
     return latitude, longitude
+
+
+def calculate_distance(start, end):
+    start_lat, start_long = get_coords_by_scat(start)
+    end_lat, end_long = get_coords_by_scat(end)
+
+    # 0.01 of a degree is 1km
+    # degree difference x 100
+    a = abs(start_lat - end_lat) * 100
+    b = abs(start_long - end_long) * 100
+
+    # c^2 = a^2 +b^2
+    c = math.sqrt(a**2 + b**2)
+
+    return c
