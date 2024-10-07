@@ -13,7 +13,7 @@ from pathlib import Path
 warnings.filterwarnings("ignore")
 
 # Hyperparameters
-EPOCHS = 1000
+EPOCHS = 100
 BATCH_SIZE = 256
 LAG = 4
 SCATS_CSV_DIR = "../../data/traffic_flows"
@@ -32,8 +32,8 @@ MODELS = {
 
 def get_early_stopping_callback():
     return EarlyStopping(
-        monitor="val_loss",
-        patience=100,
+        monitor="loss",
+        patience=50,
         verbose=1,
         mode="min",
         restore_best_weights=True,
@@ -144,10 +144,12 @@ def train_scats(model_types):
             name = Path(path).name
             scats_data = name.split("_")
             scats_number = scats_data[0]
-            scats_direction = scats_data[1]
             print(f"------------  SCATS site: {scats_number}  ------------")
 
-            model_prefix = str.format("{0}_{1}_", scats_number, scats_direction)
+            model_prefix = str.format(
+                "{0}_",
+                scats_number,
+            )
             print(model_types)
             train_models(model_types, model_prefix, path, False)
 
