@@ -112,7 +112,7 @@ def train_models(model_types, model_prefix, csv, print_loss):
     config = {"batch": BATCH_SIZE, "epochs": EPOCHS}
 
     # Process data including direction
-    X_train, y_train, scaler, encoder = original_process(csv, LAG)
+    X_train, y_train, _, _ = original_process(csv, LAG)
 
     # Reshape data to accommodate the multi-dimensional input (flow + direction)
     num_features = X_train.shape[2]  # Determine number of features dynamically
@@ -139,15 +139,13 @@ def train_models(model_types, model_prefix, csv, print_loss):
 
 
 def train_scats(model_types):
-    for path in Path(SCATS_CSV_DIR).iterdir():
+    for path in Path(SCATS_CSV_DIR_DIRECTION).iterdir():
         if path.is_file():
             name = Path(path).name
             scats_data = name.split("_")
             scats_number = scats_data[0]
             scats_direction = scats_data[1]
-            print(
-                f"------------  SCATS site: {scats_number} | Direction: {scats_direction}  ------------"
-            )
+            print(f"------------  SCATS site: {scats_number}  ------------")
 
             model_prefix = str.format("{0}_{1}_", scats_number, scats_direction)
             print(model_types)
