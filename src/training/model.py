@@ -4,9 +4,13 @@ from keras.models import Sequential
 from tcn import TCN
 
 
+# Define LSTM model with 9 features
 def get_lstm(units):
     model = Sequential()
-    model.add(LSTM(units[1], input_shape=(units[0], 1), return_sequences=True))
+    # Update input_shape to handle 9 features (1 traffic flow + 8 direction features)
+    model.add(
+        LSTM(units[1], input_shape=(units[0], 9), return_sequences=True)
+    )  # 9 features
     model.add(LSTM(units[2]))
     model.add(Dropout(0.2))
     model.add(Dense(units[3], activation="sigmoid"))
@@ -14,9 +18,13 @@ def get_lstm(units):
     return model
 
 
+# Define GRU model with 9 features
 def get_gru(units):
     model = Sequential()
-    model.add(GRU(units[1], input_shape=(units[0], 1), return_sequences=True))
+    # Update input_shape to handle 9 features
+    model.add(
+        GRU(units[1], input_shape=(units[0], 9), return_sequences=True)
+    )  # 9 features
     model.add(GRU(units[2]))
     model.add(Dropout(0.2))
     model.add(Dense(units[3], activation="sigmoid"))
@@ -35,12 +43,13 @@ def _get_sae(inputs, hidden, output):
 
 
 def get_saes(layers):
-    sae1 = _get_sae(layers[0], layers[1], layers[-1])
+    # Adjust for input size of 36 (4 timesteps * 9 features)
+    sae1 = _get_sae(36, layers[1], layers[-1])  # Input is now 36 features
     sae2 = _get_sae(layers[1], layers[2], layers[-1])
     sae3 = _get_sae(layers[2], layers[3], layers[-1])
 
     saes = Sequential()
-    saes.add(Dense(layers[1], input_shape=(layers[0],), name="hidden1"))
+    saes.add(Dense(layers[1], input_shape=(36,), name="hidden1"))  # 36 input features
     saes.add(Activation("sigmoid"))
     saes.add(Dense(layers[2], name="hidden2"))
     saes.add(Activation("sigmoid"))
@@ -54,11 +63,13 @@ def get_saes(layers):
     return models
 
 
+# Define TCN model with 9 features
 def get_tcn(units):
     model = Sequential()
+    # Update input_shape to handle 9 features
     model.add(
         TCN(
-            input_shape=(units[0], 1),
+            input_shape=(units[0], 9),  # 9 features
             nb_filters=64,
             kernel_size=3,
             dilations=[1, 2, 4, 8],
