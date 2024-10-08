@@ -18,6 +18,8 @@ import sys
 
 # Project Imports
 import algorithms.bfs as bfs
+import algorithms.astar as astar
+
 import algorithms.graph as graph_maker
 import utilities.logger as logger
 import main as main
@@ -65,7 +67,12 @@ def run_pathfinding(start, end):
         location=(-37.86703, 145.09159), zoom_start=13, tiles="CartoDB Positron"
     )
 
-    path = bfs.bfs(graph, int(start), int(end))
+    #start_node = graph_maker.search_graph(graph, start)
+    #end_node = graph_maker.search_graph(graph, end)
+
+    logger.log(f"Using start and end node [{start}, {end}]")
+
+    path = astar.astar(graph, start, int(end))
 
     distance = 0  # in km
     time = 0  # in minutes

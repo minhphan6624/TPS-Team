@@ -1,9 +1,9 @@
 import sys
-from tcn import TCN
-import train
 
 sys.dont_write_bytecode = True
 
+from tcn import TCN
+import train
 from keras.models import load_model
 from sklearn.preprocessing import MinMaxScaler, OneHotEncoder
 from data import original_process
@@ -124,9 +124,11 @@ def cpredict(model_path, data_path):
 
     time_input = "11:30"  # Specify the time input for prediction
     direction_input = "W"  # Specify the direction input for prediction
+    
     predicted_flow = predict_traffic_flow(
         time_input, direction_input, model_path, data_path
     )
+
     print(
         f"Predicted traffic flow at {time_input} in direction {direction_input}: {predicted_flow:.2f} vehicles per 15 minutes"
     )

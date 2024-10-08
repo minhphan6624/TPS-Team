@@ -32,6 +32,18 @@ def load_data():
         regex=True,
     )
 
+def search_graph(graph, scat_number):
+    # Looks for for instance of scat_number and returns the str
+    for key, value in graph.items():
+        if str(scat_number) in key:
+            return key
+        
+        for v in value:
+            if str(scat_number) in v:
+                return key
+            
+    return None
+
 
 def generate_graph():
     global df
@@ -58,6 +70,7 @@ def generate_graph():
         latitude = latitudes[index]
 
         intersection = int(scat)
+
         direction = location_split[1]
 
         opposite_direction = get_opposite_direction(direction)
@@ -75,17 +88,15 @@ def generate_graph():
 
         # Find the closest SCAT based on longitude and latitude
         for _, row in first_loc_df.iterrows():
-            dist = math.sqrt(
-                (row["NB_LONGITUDE"] - longitude) ** 2
-                + (row["NB_LATITUDE"] - latitude) ** 2
-            )
+            dist = math.sqrt( (row["NB_LONGITUDE"] - longitude) ** 2 + (row["NB_LATITUDE"] - latitude) ** 2 )
+            
             if dist < min_distance:
                 min_distance = dist
                 closest_scat = row["SCATS Number"]
 
-        entry = closest_scat
+        entry = f"{closest_scat}_{opposite_direction}"
 
-        if entry is not None:
+        if closest_scat is not None:
             if graph.get(intersection) is None:
                 graph[intersection] = [entry]
             else:

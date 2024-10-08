@@ -1,4 +1,7 @@
 import sys
+
+sys.dont_write_bytecode = True
+
 import os
 import warnings
 import argparse
@@ -29,7 +32,6 @@ MODELS = {
     "tcn": model.get_tcn([LAG, 128, 64, 32, 9]),
 }
 
-
 def get_early_stopping_callback():
     return EarlyStopping(
         monitor="loss",
@@ -38,7 +40,6 @@ def get_early_stopping_callback():
         mode="min",
         restore_best_weights=True,
     )
-
 
 def train_model(model, X_train, y_train, name, config, print_loss):
     model.compile(loss="mse", optimizer="rmsprop", metrics=["mape"])
