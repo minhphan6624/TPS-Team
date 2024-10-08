@@ -7,11 +7,15 @@ import warnings
 import argparse
 import numpy as np
 import pandas as pd
-from data import original_process
-import model as model
+
+import training.model as model
+
 from keras.models import Model
 from keras.callbacks import EarlyStopping
 from pathlib import Path
+
+from training.data import original_process
+
 
 warnings.filterwarnings("ignore")
 

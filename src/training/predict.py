@@ -3,15 +3,19 @@ import sys
 sys.dont_write_bytecode = True
 
 from tcn import TCN
-import train
 from keras.models import load_model
 from sklearn.preprocessing import MinMaxScaler, OneHotEncoder
-from data import original_process
+
+import training.data as data
+import training.train as train
+
 import numpy as np
 import pandas as pd
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 
+MODEL_DIR = "./saved_models"
+CSV_DIR = "../../data/new_traffic_flows"
 
 def plot_results(y_true, y_pred):
     d = "2016-10-1 00:00"
@@ -33,6 +37,7 @@ def plot_results(y_true, y_pred):
     fig.autofmt_xdate()
 
     plt.show()
+
 
 
 def predict_traffic_flow(time_input, direction_input, model_path, data_path):
@@ -108,6 +113,18 @@ def predict_traffic_flow(time_input, direction_input, model_path, data_path):
 
     return predicted
 
+def predict_flow(scats_num, time, direction, model_type):
+    model_path = MODEL_DIR + "/" + scats_num + "_" + model_type + ".keras"
+    csv_path = CSV_DIR + "/" + scats_num + "_" + "trafficflow.csv"
+    print(model_path)
+    print(csv_path)
+    predicted_flow = predict_traffic_flow(time, direction, model_path, csv_path)
+    print(
+        f"Predicted traffic flow at {time} in direction {direction}: {predicted_flow:.2f} vehicles per 15 minutes"
+    )
+    print("----------------------------------------")
+
+    return predicted_flow
 
 def main():
     # Load Keras models and predict traffic flow including directions
@@ -124,7 +141,7 @@ def cpredict(model_path, data_path):
 
     time_input = "11:30"  # Specify the time input for prediction
     direction_input = "W"  # Specify the direction input for prediction
-    
+
     predicted_flow = predict_traffic_flow(
         time_input, direction_input, model_path, data_path
     )
@@ -142,7 +159,7 @@ def original_predict(model_path, train_csv):
     model = load_model(model_path)
     print("Model loaded successfully!")
 
-    X_train, y_train, scaler = original_process(train_csv, lags)
+    X_train, y_train, scaler = data.original_process(train_csv, lags)
 
     y_train = scaler.inverse_transform(y_train.reshape(-1, 1)).reshape(1, -1)[0]
     X_train = np.reshape(X_train, (X_train.shape[0], X_train.shape[1], 1))

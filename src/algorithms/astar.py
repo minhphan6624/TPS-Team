@@ -1,17 +1,22 @@
 # Project Imports
 import utilities.logger as logger
+import training.predict as prediction_module
+import graph as graph_maker
 
 # Library Imports
 import heapq
 
-def heuristic_function(a, b):
-    print(f'Calculating heuristic for {a} and {b}')
+PATH_COST = 30
 
+def heuristic_function(node):
+    print(f'Calculating heuristic cost for {node}')
 
-    return 30
+    scat_number = node.split('_')[0]
+    direction = node.split('_')[1]
+    
+    return prediction_module.predict_flow(scat_number, "11:30", direction, "lstm")
 
 def parse_node(node_str):
-    # Extract the numeric part of the node
     return int(node_str.split('_')[0])
 
 def astar(graph, start_node, end_node):
@@ -19,9 +24,13 @@ def astar(graph, start_node, end_node):
     closed_set = set()
     
     parent = {}
+
+    start_with_direction = graph_maker.search_graph(graph, start_node)
+
+    print("Got start with direction -> ", start_with_direction)
     
     g_score = {start_node: 0}
-    f_score = {start_node: heuristic_function(start_node, end_node)}
+    f_score = {start_node: heuristic_function(start_with_direction)}
     
     heapq.heappush(open_set, (f_score[start_node], start_node))
     
@@ -33,9 +42,11 @@ def astar(graph, start_node, end_node):
         if parse_node(current_node) == end_node:
             logger.log('Found the end node!')
             path = []
+
             while current_node:
                 path.append(parse_node(current_node))
                 current_node = parent.get(current_node)
+
             path.reverse()
             return path
         
@@ -46,12 +57,12 @@ def astar(graph, start_node, end_node):
             if neighbor in closed_set:
                 continue
             
-            tentative_g_score = g_score[current_node] + 1
+            tentative_g_score = g_score[current_node] + PATH_COST
             
             if neighbor not in g_score or tentative_g_score < g_score[neighbor]:
                 parent[neighbor] = current_node
                 g_score[neighbor] = tentative_g_score
-                f_score[neighbor] = g_score[neighbor] + heuristic_function(parse_node(neighbor), end_node)
+                f_score[neighbor] = g_score[neighbor] + heuristic_function(parse_node(neighbor))
                 
                 if neighbor not in [node for _, node in open_set]:
                     heapq.heappush(open_set, (f_score[neighbor], neighbor))

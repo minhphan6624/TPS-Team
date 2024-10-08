@@ -67,6 +67,7 @@ def get_saes(layers):
 def get_tcn(units):
     model = Sequential()
     # Update input_shape to handle 9 features
+    
     model.add(
         TCN(
             input_shape=(units[0], 9),  # 9 features
@@ -75,6 +76,7 @@ def get_tcn(units):
             dilations=[1, 2, 4, 8],
         )
     )
+
     model.add(Dropout(0.2))
     model.add(Dense(units[1], activation="relu"))
     model.add(Dense(units[2], activation="sigmoid"))
