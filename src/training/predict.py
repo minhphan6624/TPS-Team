@@ -3,6 +3,7 @@ import sys
 sys.dont_write_bytecode = True
 
 from tcn import TCN
+import os
 from keras.models import load_model
 from sklearn.preprocessing import MinMaxScaler, OneHotEncoder
 
@@ -41,6 +42,9 @@ def plot_results(y_true, y_pred):
 
 
 def predict_traffic_flow(time_input, direction_input, model_path, data_path):
+    # print current directory
+    print("Current Directory -> ", os.getcwd())
+
     # Load the model
     if "tcn" in model_path.lower():
         model = load_model(model_path, custom_objects={"TCN": TCN})
@@ -116,6 +120,7 @@ def predict_traffic_flow(time_input, direction_input, model_path, data_path):
 def predict_flow(scats_num, time, direction, model_type):
     model_path = MODEL_DIR + "/" + scats_num + "_" + model_type + ".keras"
     csv_path = CSV_DIR + "/" + scats_num + "_" + "trafficflow.csv"
+
     print(model_path)
     print(csv_path)
     predicted_flow = predict_traffic_flow(time, direction, model_path, csv_path)

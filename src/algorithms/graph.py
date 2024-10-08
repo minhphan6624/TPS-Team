@@ -32,19 +32,6 @@ def load_data():
         regex=True,
     )
 
-def search_graph(graph, scat_number):
-    # Looks for for instance of scat_number and returns the str
-    for key, value in graph.items():
-        if str(scat_number) in key:
-            return key
-        
-        for v in value:
-            if str(scat_number) in v:
-                return key
-            
-    return None
-
-
 def generate_graph():
     global df
 

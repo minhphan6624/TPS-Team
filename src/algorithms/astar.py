@@ -1,7 +1,7 @@
 # Project Imports
 import utilities.logger as logger
 import training.predict as prediction_module
-import graph as graph_maker
+import algorithms.graph as graph_maker
 
 # Library Imports
 import heapq
@@ -25,7 +25,7 @@ def astar(graph, start_node, end_node):
     
     parent = {}
 
-    start_with_direction = graph_maker.search_graph(graph, start_node)
+    start_with_direction = f"{start_node}_N"
 
     print("Got start with direction -> ", start_with_direction)
     
