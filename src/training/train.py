@@ -14,8 +14,8 @@ from keras.callbacks import EarlyStopping
 from pathlib import Path
 
 
-import model as model
-from data import original_process
+from .model as model
+from .data import original_process
 
 
 warnings.filterwarnings("ignore")
