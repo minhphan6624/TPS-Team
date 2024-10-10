@@ -70,7 +70,7 @@ def get_tcn(units):
     # Update input_shape to handle 9 features
     model.add(
         TCN(
-            input_shape=([(units[0], 9)]),  # 9 features
+            input_shape=(units[0], 9),  # 9 features
             nb_filters=64,
             kernel_size=3,
             dilations=[1, 2, 4, 8],

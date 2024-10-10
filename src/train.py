@@ -21,7 +21,7 @@ from training.data import original_process
 warnings.filterwarnings("ignore")
 
 # Hyperparameters
-EPOCHS = 100
+EPOCHS = 1
 BATCH_SIZE = 256
 LAG = 4
 SCATS_CSV_DIR = "../training_data/traffic_flows"
@@ -34,7 +34,7 @@ MODELS = {
     "lstm": get_lstm([LAG, 64, 64, 1]),  # 9 features total
     "gru": get_gru([LAG, 64, 64, 1]),
     "saes": get_saes([LAG, 128, 64, 32, 1]),
-    "tcn": get_tcn([LAG, 128, 64, 32, 1]),
+    # "tcn": get_tcn([LAG, 128, 64, 32, 1]),
 }
 
 

@@ -16,7 +16,7 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 
 MODEL_DIR = "./saved_models"
-CSV_DIR = "../../training_data/new_traffic_flows"
+CSV_DIR = "../training_data/new_traffic_flows"
 
 
 def plot_results(y_true, y_pred):
