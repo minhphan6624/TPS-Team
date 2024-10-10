@@ -11,9 +11,7 @@ import tensorflow as tf
 
 
 def test():
-    X_train, X_test, y_train, y_test, scaler, encoder = original_process_test(
-        TEST_CSV_DIRECTION, LAG
-    )
+    _, X_test, _, y_test, _, _ = original_process_test(TEST_CSV_DIRECTION, LAG)
 
     models = {
         "lstm": tf.keras.models.load_model("./saved_models/lstm.keras"),
