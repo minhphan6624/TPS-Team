@@ -15,7 +15,8 @@ def heuristic_function(node):
     scat_number = node.split("_")[0]
     direction = node.split("_")[1]
 
-    return prediction_module.predict_flow(scat_number, "11:30", direction, "lstm")
+    # return prediction_module.predict_flow(scat_number, "11:30", direction, "lstm")
+    return 30
 
 
 def parse_node(node_str):

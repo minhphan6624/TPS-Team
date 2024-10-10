@@ -21,7 +21,7 @@ from training.data import original_process
 warnings.filterwarnings("ignore")
 
 # Hyperparameters
-EPOCHS = 300
+EPOCHS = 1000
 BATCH_SIZE = 256
 LAG = 4
 SCATS_CSV_DIR = "../training_data/traffic_flows"
