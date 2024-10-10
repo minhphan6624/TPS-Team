@@ -14,14 +14,14 @@ from keras.callbacks import EarlyStopping
 from pathlib import Path
 
 
-from training.model import get_lstm, get_gru, get_saes, get_cnn
+from training.model import get_lstm, get_gru, get_saes, get_tcn
 from training.data import original_process
 
 
 warnings.filterwarnings("ignore")
 
 # Hyperparameters
-EPOCHS = 300
+EPOCHS = 1
 BATCH_SIZE = 256
 LAG = 4
 SCATS_CSV_DIR = "../training_data/traffic_flows"
@@ -31,39 +31,10 @@ TEST_CSV_DIRECTION = f"{SCATS_CSV_DIR_DIRECTION}/970_trafficflow.csv"
 
 # Models with input shape reflecting 9 features (1 for flow + 8 for direction)
 MODELS = {
-    "lstm": get_lstm(
-        (LAG, 9),
-        {
-            "lstm_units_1": 64,  # Number of units in the first LSTM layer
-            "lstm_units_2": 64,  # Number of units in the second LSTM layer
-            "dense_units": 1,  # Number of units in the output dense layer
-        },
-    ),
-    "gru": get_gru(
-        (LAG, 9),
-        {
-            "gru_units_1": 64,  # Number of units in the first GRU layer
-            "gru_units_2": 64,  # Number of units in the second GRU layer
-            "dense_units": 1,  # Number of units in the output dense layer
-        },
-    ),
-    "saes": get_saes(
-        36,
-        {
-            "hidden_1": 128,  # Number of units in the first hidden layer
-            "hidden_2": 64,  # Number of units in the second hidden layer
-            "hidden_3": 32,  # Number of units in the third hidden layer
-            "hidden_4": 16,  # Number of units in the fourth hidden layer
-            "output": 1,  # Number of units in the output layer
-        },
-    ),
-    "cnn": get_cnn(
-        (LAG, 9),
-        {
-            "dense_1": 128,  # Number of units in the first dense layer
-            "dense_2": 1,  # Number of units in the output dense layer
-        },
-    ),
+    "lstm": get_lstm([LAG, 64, 64, 1]),  # 9 features total
+    "gru": get_gru([LAG, 64, 64, 1]),
+    "saes": get_saes([LAG, 128, 64, 32, 1]),
+    # "tcn": get_tcn([LAG, 128, 64, 32, 1]),
 }
 
 
