@@ -8,13 +8,14 @@ import argparse
 import numpy as np
 import pandas as pd
 
-import training.model as model
 
 from keras.models import Model
 from keras.callbacks import EarlyStopping
 from pathlib import Path
 
-from training.data import original_process
+
+import model as model
+from data import original_process
 
 
 warnings.filterwarnings("ignore")
@@ -23,9 +24,9 @@ warnings.filterwarnings("ignore")
 EPOCHS = 100
 BATCH_SIZE = 256
 LAG = 4
-SCATS_CSV_DIR = "../../data/traffic_flows"
+SCATS_CSV_DIR = "../../training_data/traffic_flows"
 TEST_CSV = f"{SCATS_CSV_DIR}/970_N_trafficflow.csv"
-SCATS_CSV_DIR_DIRECTION = "../../data/new_traffic_flows"
+SCATS_CSV_DIR_DIRECTION = "../../training_data/new_traffic_flows"
 TEST_CSV_DIRECTION = f"{SCATS_CSV_DIR_DIRECTION}/970_trafficflow.csv"
 
 # Models with input shape reflecting 9 features (1 for flow + 8 for direction)
@@ -33,8 +34,9 @@ MODELS = {
     "lstm": model.get_lstm([LAG, 64, 64, 9]),  # 9 features total
     "gru": model.get_gru([LAG, 64, 64, 9]),
     "saes": model.get_saes([LAG, 128, 64, 32, 9]),
-    "tcn": model.get_tcn([LAG, 128, 64, 32, 9]),
+    # "tcn": model.get_tcn([LAG, 128, 64, 32, 9]),
 }
+
 
 def get_early_stopping_callback():
     return EarlyStopping(
@@ -45,12 +47,13 @@ def get_early_stopping_callback():
         restore_best_weights=True,
     )
 
+
 def train_model(model, X_train, y_train, name, config, print_loss):
     model.compile(loss="mse", optimizer="rmsprop", metrics=["mape"])
 
     # Set up EarlyStopping callback
-    model_path = "saved_models/" + str(name) + ".keras"
-    model_loss_path = "saved_models/" + name + "_loss.csv"
+    model_path = "../saved_models/" + str(name) + ".keras"
+    model_loss_path = "../saved_models/" + name + "_loss.csv"
 
     # Train the model with EarlyStopping
     hist = model.fit(

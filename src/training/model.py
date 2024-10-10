@@ -2,6 +2,7 @@ from keras.layers import Dense, Dropout, Activation
 from keras.layers import LSTM, GRU
 from keras.models import Sequential
 from tcn import TCN
+import tensorflow as tf
 
 
 # Define LSTM model with 9 features
@@ -67,10 +68,9 @@ def get_saes(layers):
 def get_tcn(units):
     model = Sequential()
     # Update input_shape to handle 9 features
-    
     model.add(
         TCN(
-            input_shape=(units[0], 9),  # 9 features
+            input_shape=([(units[0], 9)]),  # 9 features
             nb_filters=64,
             kernel_size=3,
             dilations=[1, 2, 4, 8],

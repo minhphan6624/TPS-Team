@@ -16,7 +16,8 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 
 MODEL_DIR = "./saved_models"
-CSV_DIR = "../../data/new_traffic_flows"
+CSV_DIR = "../../training_data/new_traffic_flows"
+
 
 def plot_results(y_true, y_pred):
     d = "2016-10-1 00:00"
@@ -38,7 +39,6 @@ def plot_results(y_true, y_pred):
     fig.autofmt_xdate()
 
     plt.show()
-
 
 
 def predict_traffic_flow(time_input, direction_input, model_path, data_path):
@@ -117,6 +117,7 @@ def predict_traffic_flow(time_input, direction_input, model_path, data_path):
 
     return predicted
 
+
 def predict_flow(scats_num, time, direction, model_type):
     model_path = MODEL_DIR + "/" + scats_num + "_" + model_type + ".keras"
     csv_path = CSV_DIR + "/" + scats_num + "_" + "trafficflow.csv"
@@ -130,6 +131,7 @@ def predict_flow(scats_num, time, direction, model_type):
     print("----------------------------------------")
 
     return predicted_flow
+
 
 def main():
     # Load Keras models and predict traffic flow including directions
