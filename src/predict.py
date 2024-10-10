@@ -8,7 +8,7 @@ from keras.models import load_model
 from sklearn.preprocessing import MinMaxScaler, OneHotEncoder
 
 import training.data as data
-import training.train as train
+from train import MODELS, TEST_CSV_DIRECTION
 
 import numpy as np
 import pandas as pd
@@ -135,10 +135,10 @@ def predict_flow(scats_num, time, direction, model_type):
 
 def main():
     # Load Keras models and predict traffic flow including directions
-    for model_name in train.MODELS:
+    for model_name in MODELS:
         model_path = f"./saved_models/{model_name}.keras"
         print(model_path)
-        cpredict(model_path, train.TEST_CSV_DIRECTION)
+        cpredict(model_path, TEST_CSV_DIRECTION)
 
 
 def cpredict(model_path, data_path):

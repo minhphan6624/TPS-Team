@@ -44,4 +44,6 @@ def original_process(train, lags):
     # Debugging: Check X_train shape
     print("X_train shape before reshaping:", X_train.shape)
 
+    print(f"Shape of y_train: {y_train.shape}")
+
     return X_train, y_train, scaler, encoder
