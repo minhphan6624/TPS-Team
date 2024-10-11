@@ -8,20 +8,33 @@ import heapq
 
 PATH_COST = 30
 
+heuristic_dict = {}
 
-def heuristic_function(node):
-    print(f"Calculating heuristic cost for {node}")
+def heuristic_function(nodeStart, nodeEnd):
+    global overall_time, overall_distance
 
-    scat_number = node.split("_")[0]
-    direction = node.split("_")[1]
+    print(f"Calculating heuristic cost for NodeStart -> {nodeStart}, NodeEnd -> {nodeEnd}")
 
-    # return prediction_module.predict_flow(scat_number, "11:30", direction, "lstm")
-    return 30
+    end_scat = nodeEnd.split("_")[0]
+    end_direction = nodeEnd.split("_")[1]
 
+    flow = prediction_module.predict_flow(end_scat, "08:30", end_direction, "lstm")
+
+    if "_" in nodeStart:
+        nodeStart = nodeStart.split("_")[0]
+
+    distance = graph_maker.calculate_distance(nodeStart, end_scat)
+    speed = graph_maker.calculate_speed(nodeStart, flow)
+
+    heuristic_dict[f"{nodeStart}_{end_scat}"] = {
+        "distance": distance,
+        "speed": speed
+    }
+
+    return distance / speed  
 
 def parse_node(node_str):
     return int(node_str.split("_")[0])
-
 
 def astar(graph, start_node, end_node):
     open_set = []
@@ -34,7 +47,7 @@ def astar(graph, start_node, end_node):
     print("Got start with direction -> ", start_with_direction)
 
     g_score = {start_node: 0}
-    f_score = {start_node: heuristic_function(start_with_direction)}
+    f_score = {start_node: 0}
 
     heapq.heappush(open_set, (f_score[start_node], start_node))
 
@@ -45,6 +58,7 @@ def astar(graph, start_node, end_node):
 
         if parse_node(current_node) == end_node:
             logger.log("Found the end node!")
+            
             path = []
 
             while current_node:
@@ -52,6 +66,25 @@ def astar(graph, start_node, end_node):
                 current_node = parent.get(current_node)
 
             path.reverse()
+
+            overall_time = 0
+            overall_distance = 0
+
+            # loop over path
+            for i in range(len(path) - 1):
+                start = path[i]
+                end = path[i + 1]
+
+                overall_distance += heuristic_dict[f"{start}_{end}"]["distance"]
+
+                if i != 0 and i != len(path) - 1:
+                    overall_time += 0.00833333 # add 30 seconds for traffic light delay
+
+                overall_time += heuristic_dict[f"{start}_{end}"]["distance"] / heuristic_dict[f"{start}_{end}"]["speed"]
+
+            logger.log(f"Distance: {round(overall_distance,2)} km")
+            logger.log(f"Time: {round(overall_time*60,2)} minutes")  
+
             return path
 
         closed_set.add(current_node)
@@ -66,9 +99,7 @@ def astar(graph, start_node, end_node):
             if neighbor not in g_score or tentative_g_score < g_score[neighbor]:
                 parent[neighbor] = current_node
                 g_score[neighbor] = tentative_g_score
-                f_score[neighbor] = g_score[neighbor] + heuristic_function(
-                    parse_node(neighbor)
-                )
+                f_score[neighbor] = g_score[neighbor] + heuristic_function(current_node, neighbor)
 
                 if neighbor not in [node for _, node in open_set]:
                     heapq.heappush(open_set, (f_score[neighbor], neighbor))
