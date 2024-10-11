@@ -1,3 +1,7 @@
+import sys
+
+sys.dont_write_bytecode = True
+
 from training.data import original_process_test
 from train import TEST_CSV_DIRECTION, LAG
 
