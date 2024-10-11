@@ -19,10 +19,11 @@ import sys
 # Project Imports
 import algorithms.bfs as bfs
 import algorithms.astar as astar
-
 import algorithms.graph as graph_maker
 import utilities.logger as logger
 import main as main
+
+from utilities.time import round_to_nearest_15_minutes
 
 # Constants
 WINDOW_TITLE = "TrafficPredictionSystem"
@@ -56,7 +57,7 @@ def create_marker(scat, map_obj):
     ).add_to(map_obj)
 
 
-def run_pathfinding(start, end):
+def run_pathfinding(start, end, time):
     global graph
 
     logger.log(f"Running pathfinding algorithm from {start} to {end}")
@@ -72,7 +73,12 @@ def run_pathfinding(start, end):
 
     logger.log(f"Using start and end node [{start}, {end}]")
 
-    path = astar.astar(graph, start, int(end))
+    path = astar.astar(
+        graph,
+        start,
+        int(end),
+        time,
+    )
 
     if path is None:
         logger.log("No path found.")
@@ -127,10 +133,17 @@ def make_menu():
     end_scats.setPlaceholderText("End Scats Number")
     menu_layout.addWidget(end_scats)
 
+    time_select = QtWidgets.QTimeEdit()
+    menu_layout.addWidget(time_select)
+
     # Button to run pathfinding algorithm
     run_button = QPushButton("Run Pathfinding")
     run_button.clicked.connect(
-        lambda: run_pathfinding(start_scats.text(), end_scats.text())
+        lambda: run_pathfinding(
+            start_scats.text(),
+            end_scats.text(),
+            round_to_nearest_15_minutes(time_select.text()),
+        )
     )
     menu_layout.addWidget(run_button)
 
