@@ -126,12 +126,26 @@ def get_all_scats():
 def get_coords_by_scat(scat_number):
     global df
 
+    scat_number = int(scat_number)
+
     row = df[df["SCATS Number"] == scat_number]
     latitude = row["NB_LATITUDE"].values[0] + LAT_OFFSET
     longitude = row["NB_LONGITUDE"].values[0] + LONG_OFFSET
 
     return latitude, longitude
 
+
+def calculate_speed(start, flow):
+    # get the flow of the cars at the start node
+    velocity = 32
+    q = 1500
+    A = q/(velocity**2)
+    B = - 2*velocity*A
+
+    # calculate the speed of the cars at the start node
+    speed = (-B + math.sqrt(B**2 - 4*A*flow))/(2*A)
+
+    return speed
 
 def calculate_distance(start, end):
     start_lat, start_long = get_coords_by_scat(start)

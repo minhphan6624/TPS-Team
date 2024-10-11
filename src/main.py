@@ -1,10 +1,8 @@
 # System Imports
 import sys
-
-import pandas as pd
-
 sys.dont_write_bytecode = True
 
+import pandas as pd
 import signal
 
 # Project Imports

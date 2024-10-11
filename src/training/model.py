@@ -10,7 +10,6 @@ from keras.layers import (
     Activation,
 )
 from keras.models import Sequential
-from tcn import TCN
 import tensorflow as tf
 
 
