@@ -21,7 +21,7 @@ from training.data import original_process
 warnings.filterwarnings("ignore")
 
 # Hyperparameters
-EPOCHS = 1000
+EPOCHS = 600
 BATCH_SIZE = 256
 LAG = 4
 SCATS_CSV_DIR = "../training_data/traffic_flows"
@@ -62,7 +62,6 @@ def train_model(model, X_train, y_train, name, config, print_loss):
         batch_size=config["batch"],
         epochs=config["epochs"],
         validation_split=0.05,
-        callbacks=[get_early_stopping_callback()],
     )
 
     # if model exists, delete
@@ -102,7 +101,6 @@ def train_saes(models, X_train, y_train, name, config, print_loss):
             batch_size=config["batch"],
             epochs=config["epochs"],
             validation_split=0.05,
-            callbacks=[get_early_stopping_callback()],
         )
 
         models[i] = m
