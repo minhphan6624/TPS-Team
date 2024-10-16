@@ -10,7 +10,7 @@ import gui.window as window
 import utilities.logger as logger
 
 # Global Variables
-VERSION = "1.0.0"
+VERSION = "1.2.0"
 
 
 def main():

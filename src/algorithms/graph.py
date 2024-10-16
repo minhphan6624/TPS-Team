@@ -8,8 +8,8 @@ import pandas as pd
 import utilities.logger as logger
 
 # Constant Variables
-LAT_OFFSET = 0.0015
-LONG_OFFSET = 0.0013
+LAT_OFFSET = 0.00155
+LONG_OFFSET = 0.00125
 
 # Global Variables
 df = None
@@ -128,9 +128,62 @@ def get_coords_by_scat(scat_number):
 
     scat_number = int(scat_number)
 
-    row = df[df["SCATS Number"] == scat_number]
-    latitude = row["NB_LATITUDE"].values[0] + LAT_OFFSET
-    longitude = row["NB_LONGITUDE"].values[0] + LONG_OFFSET
+    # get all rows with the SCAT number
+    rows = df[df["SCATS Number"] == scat_number]
+
+    # get all locations from rows
+    directions = rows[['Location', 'NB_LONGITUDE', 'NB_LATITUDE']].copy()
+    directions = directions.drop_duplicates(subset=['Location'])
+    directions['direction'] = directions['Location'].str.split(" ", expand=True)[1]
+    directions = directions[['direction', 'NB_LONGITUDE', 'NB_LATITUDE']]
+
+    latitude = 0
+    longitude = 0
+
+    for index, row in directions.iterrows():
+       #find the location that contains N
+        if "N" in row['direction'] and longitude == 0:
+            longitude = row['NB_LONGITUDE']
+        elif "E" in row['direction'] and latitude == 0:
+            latitude = row['NB_LATITUDE']
+
+    # if the directions dataframe doesn't have a N direction then get the S direction's longitude
+    if longitude == 0:
+        if directions['direction'].str.contains('S').any():
+            longitude = directions[directions['direction'].str.contains('S')]['NB_LONGITUDE'].iloc[0]
+        else:
+            longitude = directions['NB_LONGITUDE'].iloc[0]
+    
+    # if the directions dataframe doesn't have a E direction then get the W direction's latitude
+    if latitude == 0:
+        if directions['direction'].str.contains('W').any() > 1:
+            latitude = directions[directions['direction'].str.contains('W')]['NB_LATITUDE'].iloc[0]
+        else:
+            latitude = directions['NB_LATITUDE'].iloc[0] 
+
+    # print(scat_number, latitude, longitude)
+
+    # add offsets to the latitude and longitude
+    latitude = latitude + LAT_OFFSET
+    longitude = longitude + LONG_OFFSET
+
+    # hard coded offsets for specific scat numbers
+    # if LAT_OFFSET and LONG_OFFSET are changed these would need to be recalculated
+    if scat_number == 4335:
+        latitude = latitude - 0.00026 # down
+        longitude = longitude - 0.0005 # to left
+    elif scat_number == 4030:
+        latitude = latitude + 0.00062 # up
+        longitude = longitude + 0.00018 # to right
+    elif scat_number == 4051:
+        latitude = latitude + 0.00002 # up
+        longitude = longitude - 0.00035 #to left
+    elif scat_number == 3126:
+        longitude = longitude + 0.0001 # to right
+    elif scat_number == 3662:
+        latitude = latitude - 0.00015 # down
+    elif scat_number == 4324:
+        longitude = longitude + 0.00005 # to right
 
     return latitude, longitude
 

@@ -7,6 +7,7 @@ from PyQt5.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QPushButton,
+    QPlainTextEdit,
 )
 from PyQt5 import QtWebEngineWidgets, QtCore, QtWidgets
 from folium import plugins, IFrame
@@ -28,7 +29,7 @@ from utilities.time import round_to_nearest_15_minutes
 
 # Constants
 WINDOW_TITLE = "TrafficPredictionSystem"
-WINDOW_SIZE = (1200, 700)
+WINDOW_SIZE = (1200, 500)
 WINDOW_LOCATION = (160, 70)
 
 # Global variables
@@ -59,14 +60,14 @@ def create_marker(scat, map_obj):
 
 
 def run_pathfinding(start, end, time):
-    global graph
+    global graph, menu_layout
 
     logger.log(f"Running pathfinding algorithm from {start} to {end}")
 
     graph = graph_maker.generate_graph()
 
     map_obj = folium.Map(
-        location=(-37.86703, 145.09159), zoom_start=13, tiles="CartoDB Positron"
+        location=(-37.820946, 145.060832), zoom_start=12, tiles="CartoDB Positron"
     )
 
     logger.log(f"Using start and end node [{start}, {end}]")
@@ -116,9 +117,33 @@ def run_pathfinding(start, end, time):
         logger.log(f"Path {path_index + 1} - {len(path_info['path'])} nodes, Color: {color}")
 
     update_map(map_obj._repr_html_())
+    
+    # should display the time as well
+    path_display = QLabel(f"Pathfinding complete. {len(paths)} paths found.")
+    path_display.setStyleSheet(
+        "font-size: 16px; font-weight: bold; color: white; background-color: #333; padding: 5px;"
+    )
+    path_display.setAlignment(QtCore.Qt.AlignCenter)
+    menu_layout.addWidget(path_display)
 
+    path_str = ""
+    for index, path in enumerate(paths):
+        node_string = " -> ".join([str(node) for node in path['path']])
+        time = f"{path['time']} minutes"
+        if (path['time'] < 1):
+            time = f"{round(path['time'] * 60, 2)} seconds"
+        path_str += f"Path {index + 1}: {node_string} \n {time} - {path['distance']} km \n \n"
+
+    path_text = QPlainTextEdit()
+    path_text.setPlainText(path_str)
+    path_text.setReadOnly(True)
+    path_text.setStyleSheet(
+        "font-size: 12px; color: white; background-color: #333; padding: 5px;"
+    )
+    menu_layout.addWidget(path_text) # this will add a text box with the path information everytime you run the pathfinding algorithm
 
 def make_menu():
+    global menu_layout
     logger.log("Creating menu...")
 
     prediction_module.init()
@@ -161,6 +186,12 @@ def make_menu():
     )
     menu_layout.addWidget(run_button)
 
+    # Button to reset the map (doesn't currently work as expected)
+    reset_button = QPushButton("Reset")
+    reset_button.clicked.connect(lambda: update_map(create_map()._repr_html_()))
+    # updates the map but the visual doesn't update
+    menu_layout.addWidget(reset_button)
+
     # Add a stretcher to push buttons to the top
     menu_layout.addStretch()
 
@@ -178,7 +209,7 @@ def create_map():
 
     # create map
     map_obj = folium.Map(
-        location=(-37.86703, 145.09159), zoom_start=13, tiles="CartoDB Positron"
+        location=(-37.820946, 145.060832), zoom_start=12, tiles="CartoDB Positron"
     )
     map_widget = QtWebEngineWidgets.QWebEngineView()
 
