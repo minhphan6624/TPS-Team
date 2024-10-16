@@ -18,6 +18,18 @@ import matplotlib.pyplot as plt
 MODEL_DIR = "./saved_models"
 CSV_DIR = "../training_data/new_traffic_flows"
 
+# key value (scats_num) -> model instance
+lstm_models = {}
+
+def init():
+    # Load all lstm models from MODEL_DIR/*_lstm.keras
+    for model_name in os.listdir(MODEL_DIR):
+        if "lstm" in model_name:
+            model_path = f"{MODEL_DIR}/{model_name}"
+            scats_num = model_name.split("_")[0]
+            lstm_models[scats_num] = load_model(model_path)
+
+    print("LSTM Models loaded successfully, list size -> ", len(lstm_models))
 
 def plot_results(y_true, y_pred):
     d = "2016-10-1 00:00"
@@ -42,10 +54,7 @@ def plot_results(y_true, y_pred):
 
 
 def predict_traffic_flow(time_input, direction_input, model_path, data_path):
-    # print current directory
-    print("Current Directory -> ", os.getcwd())
-
-    # Load the model
+  # Load the model
     if "tcn" in model_path.lower():
         model = load_model(model_path, custom_objects={"TCN": TCN})
     else:
@@ -117,6 +126,46 @@ def predict_traffic_flow(time_input, direction_input, model_path, data_path):
 
     return predicted
 
+def predict_flow_lstm_optimized(scats_num, time, direction):
+    if scats_num not in lstm_models:
+        print(f"Model for scats_num {scats_num} not found!")
+        return
+
+    model = lstm_models[scats_num]
+
+    csv_path = CSV_DIR + "/" + scats_num + "_" + "trafficflow.csv"
+
+    def lstm_flow(time_input, direction_input, model, data_path):
+        df = pd.read_csv(data_path, encoding="utf-8").fillna(0)
+        attr = "Lane 1 Flow (Veh/15 Minutes)"
+        direction_attr = "direction"
+
+        scaler = MinMaxScaler(feature_range=(0, 1)).fit(df[attr].values.reshape(-1, 1))
+        flow = scaler.transform(df[attr].values.reshape(-1, 1)).reshape(1, -1)[0]
+
+        encoder = OneHotEncoder(sparse_output=False, categories=[["N", "S", "E", "W", "NE", "NW", "SE", "SW"]])
+
+        direction_encoded = encoder.fit_transform(df[direction_attr].values.reshape(-1, 1))
+        features = np.hstack([flow.reshape(-1, 1), direction_encoded])
+
+        time_to_index = { time: i for i, time in enumerate(df["15 Minutes"].str.split(" ").str[1]) }
+        index = time_to_index[time_input]
+        direction_onehot = encoder.transform([[direction_input]])
+        X_pred = features[index - 4 : index].reshape(1, 4, 9)
+
+        for i in range(4):
+            X_pred[0, i, 1:] = direction_onehot
+
+        predicted = model.predict(X_pred)
+
+        return scaler.inverse_transform(predicted.reshape(-1, 1))[0][0]
+
+    predicted_flow = lstm_flow(time, direction, model, csv_path)
+
+    print(f"Predicted traffic flow at {time} in direction {direction}: {predicted_flow:.2f} vehicles per 15 minutes")
+    print("----------------------------------------")
+
+    return predicted_flow
 
 def predict_flow(scats_num, time, direction, model_type):
     model_path = MODEL_DIR + "/" + scats_num + "_" + model_type + ".keras"
