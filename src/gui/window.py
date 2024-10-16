@@ -21,6 +21,7 @@ import algorithms.bfs as bfs
 import algorithms.astar as astar
 import algorithms.graph as graph_maker
 import utilities.logger as logger
+import predict as prediction_module
 import main as main
 
 from utilities.time import round_to_nearest_15_minutes
@@ -68,46 +69,59 @@ def run_pathfinding(start, end, time):
         location=(-37.86703, 145.09159), zoom_start=13, tiles="CartoDB Positron"
     )
 
-    # start_node = graph_maker.search_graph(graph, start)
-    # end_node = graph_maker.search_graph(graph, end)
-
     logger.log(f"Using start and end node [{start}, {end}]")
 
-    path = astar.astar(
-        graph,
-        start,
-        int(end),
-        time,
-    )
+    paths = astar.astar(graph, start, int(end), time)
 
-    if path is None:
-        logger.log("No path found.")
+    if paths is None or len(paths) == 0:
+        logger.log("No paths found.")
         return
 
+    # Define a list of distinct colors for different paths
+    path_colors = ['red', 'blue', 'green', 'purple', 'orange', 'darkblue']
+    
     # add start and end markers on the map with the displayed scat number
     create_marker(start, map_obj)
     create_marker(end, map_obj)
 
-    for i in range(len(path) - 1):
-        start = path[i]
-        end = path[i + 1]
+    # Draw each path with a different color
+    for path_index, path_info in enumerate(paths):
+        color = path_colors[path_index % len(path_colors)]  # Cycle through colors if more paths than colors
+        
+        print(path_info)
+        
+        logger.log(f"\nDrawing Path {path_index + 1} in {color}")
+        
+        # Draw the path segments
+        for i in range(len(path_info['path']) - 1):
+            current = path_info['path'][i]
+            next_node = path_info['path'][i + 1]
 
-        start_lat, start_long = graph_maker.get_coords_by_scat(start)
-        end_lat, end_long = graph_maker.get_coords_by_scat(end)
+            start_lat, start_long = graph_maker.get_coords_by_scat(current)
+            end_lat, end_long = graph_maker.get_coords_by_scat(next_node)
 
-        logger.log(f"Visited: {start} -> {end}")
-        folium.PolyLine(
-            [(start_lat, start_long), (end_lat, end_long)],
-            color="red",
-            weight=2.5,
-            opacity=1,
-        ).add_to(map_obj)
+            logger.log(f"Visited: {current} -> {next_node}")
+            
+            # Create the path line with the current color
+            folium.PolyLine(
+                [(start_lat, start_long), (end_lat, end_long)],
+                color=color,
+                weight=2.5 if path_index == 0 else 2.0,
+                opacity=1.0 if path_index == 0 else 0.8,
+                popup=f'Path {path_index + 1}',
+                tooltip=f'Path {path_index + 1} - Segment: {current} → {next_node}'
+            ).add_to(map_obj)
+            
+        # Add a summary for this path
+        logger.log(f"Path {path_index + 1} - {len(path_info['path'])} nodes, Color: {color}")
 
     update_map(map_obj._repr_html_())
 
 
 def make_menu():
     logger.log("Creating menu...")
+
+    prediction_module.init()
 
     # Create a widget for the menu
     menu_widget = QWidget()
