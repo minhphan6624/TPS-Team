@@ -8,7 +8,7 @@ def round_to_15(minutes):
 
 def round_to_nearest_15_minutes(time_str):
     # Convert 12-hour time to 24-hour format
-    time_obj = datetime.strptime(time_str, "%I:%M %p")
+    time_obj = datetime.strptime(time_str, "%I:%M")
 
     # Get the rounded minutes
     rounded_minutes = round_to_15(time_obj.minute)

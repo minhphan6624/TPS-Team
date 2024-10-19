@@ -59,7 +59,7 @@ def create_marker(scat, map_obj):
     ).add_to(map_obj)
 
 
-def run_pathfinding(start, end, time):
+def run_pathfinding(start, end, datetime):
     global graph, menu_layout
 
     logger.log(f"Running pathfinding algorithm from {start} to {end}")
@@ -72,7 +72,14 @@ def run_pathfinding(start, end, time):
 
     logger.log(f"Using start and end node [{start}, {end}]")
 
-    paths = astar.astar(graph, start, int(end), time)
+    # format datetime
+    datetime_split = datetime.split(" ")
+    date = datetime_split[0]
+    time = round_to_nearest_15_minutes(datetime_split[1])
+    formatted_datetime = f"{date} {time}"
+
+
+    paths = astar.astar(graph, start, int(end), formatted_datetime)
 
     if paths is None or len(paths) == 0:
         logger.log("No paths found.")
@@ -172,8 +179,9 @@ def make_menu():
     end_scats.setPlaceholderText("End Scats Number")
     menu_layout.addWidget(end_scats)
 
-    time_select = QtWidgets.QTimeEdit()
-    menu_layout.addWidget(time_select)
+    datetime_select = QtWidgets.QDateTimeEdit()
+    datetime_select.setDateTime(QtCore.QDateTime.currentDateTime())
+    menu_layout.addWidget(datetime_select)
 
     # Button to run pathfinding algorithm
     run_button = QPushButton("Run Pathfinding")
@@ -181,7 +189,7 @@ def make_menu():
         lambda: run_pathfinding(
             start_scats.text(),
             end_scats.text(),
-            round_to_nearest_15_minutes(time_select.text()),
+            datetime_select.text(),
         )
     )
     menu_layout.addWidget(run_button)

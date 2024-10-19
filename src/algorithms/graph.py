@@ -83,7 +83,11 @@ def generate_graph():
 
             if dist < min_distance:
                 min_distance = dist
-                closest_scat = row["SCATS Number"]
+                if scat == 4035 and direction == "W":
+                # scat 4035 doesn't have a W direction on map
+                    continue
+                else:
+                    closest_scat = row["SCATS Number"]
 
         entry = f"{closest_scat}_{opposite_direction}"
 
