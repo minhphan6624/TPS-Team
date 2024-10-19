@@ -16,11 +16,21 @@ df = None
 
 
 def load_data():
-    global df
+    global df, scat_df, position_df
     # Load in the 'scats_data.csv' file
     file_location = "../training_data/scats_data.csv"
 
     df = pd.read_csv(file_location)
+
+    # Load in the 'scats_site_listing.csv' file
+    file_location = "../training_data/scats_site_listing.csv"
+
+    scat_df = pd.read_csv(file_location)
+
+    # Load in the 'traffic_count_locations.csv' file
+    file_location = "../training_data/traffic_count_locations.csv"
+
+    position_df = pd.read_csv(file_location)
 
     # Fix location names.
     df["Location"] = df["Location"].replace(

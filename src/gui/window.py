@@ -43,19 +43,25 @@ def update_map(html):
     map_widget.setHtml(html, QtCore.QUrl(""))
 
 
-def create_marker(scat, map_obj):
+def create_marker(scat, map_obj, color="green", size=30):
     html = f"""
         <h4>Scat Number: {scat}</h4>
-        
         """
     iframe = folium.IFrame(html=html, width=150, height=100)
     popup = folium.Popup(iframe, max_width=200)
+
+    custom_icon = folium.CustomIcon(
+        icon_image="assets/pin.png",
+        icon_size=(size, size),
+        icon_anchor=(size // 2, size),
+        popup_anchor=(0, -size)
+    )
 
     folium.Marker(
         graph_maker.get_coords_by_scat(int(scat)),
         popup=popup,
         tooltip=f"Scat {scat}",
-        icon=folium.Icon(color="green"),
+        icon=custom_icon,
     ).add_to(map_obj)
 
 
@@ -95,7 +101,7 @@ def run_pathfinding(start, end, datetime):
     # Draw each path with a different color
     for path_index, path_info in enumerate(paths):
         color = path_colors[path_index % len(path_colors)]  # Cycle through colors if more paths than colors
-        
+
         print(path_info)
         
         logger.log(f"\nDrawing Path {path_index + 1} in {color}")
@@ -109,7 +115,9 @@ def run_pathfinding(start, end, datetime):
             end_lat, end_long = graph_maker.get_coords_by_scat(next_node)
 
             logger.log(f"Visited: {current} -> {next_node}")
-            
+            # create nodes on the map
+            create_marker(current, map_obj, "blue")
+
             # Create the path line with the current color
             folium.PolyLine(
                 [(start_lat, start_long), (end_lat, end_long)],
