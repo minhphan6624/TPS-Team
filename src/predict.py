@@ -6,6 +6,7 @@ from tcn import TCN
 import os
 from keras.models import load_model
 from sklearn.preprocessing import MinMaxScaler, OneHotEncoder
+from datetime import datetime
 
 import training.data as data
 from train import MODELS, TEST_CSV_DIRECTION
@@ -126,7 +127,7 @@ def predict_traffic_flow(time_input, direction_input, model_path, data_path):
 
     return predicted
 
-def predict_flow_lstm_optimized(scats_num, time, direction):
+def predict_flow_lstm_optimized(scats_num, date_time, direction):
     if scats_num not in lstm_models:
         print(f"Model for scats_num {scats_num} not found!")
         return
@@ -135,7 +136,7 @@ def predict_flow_lstm_optimized(scats_num, time, direction):
 
     csv_path = CSV_DIR + "/" + scats_num + "_" + "trafficflow.csv"
 
-    def lstm_flow(time_input, direction_input, model, data_path):
+    def lstm_flow(datetime_input, direction_input, model, data_path):
         df = pd.read_csv(data_path, encoding="utf-8").fillna(0)
         attr = "Lane 1 Flow (Veh/15 Minutes)"
         direction_attr = "direction"
@@ -148,9 +149,25 @@ def predict_flow_lstm_optimized(scats_num, time, direction):
         direction_encoded = encoder.fit_transform(df[direction_attr].values.reshape(-1, 1))
         features = np.hstack([flow.reshape(-1, 1), direction_encoded])
 
-        time_to_index = { time: i for i, time in enumerate(df["15 Minutes"].str.split(" ").str[1]) }
-        index = time_to_index[time_input]
+        # Create a dictionary to map date_times to indices
+        datetime_to_index = { date_time: i for i, date_time in enumerate(df["15 Minutes"]) }
+        # split into date and time
+        datetime_value = datetime.strptime(datetime_input, "%d/%m/%Y %H:%M")
+        date = datetime_value.day
+        time = datetime_value.time().strftime("%H:%M")
+
+        index = ""
+        # find the index for the input datetime
+        for date_str in datetime_to_index:
+            # Parse each date in the array
+            date_striped = datetime.strptime(date_str, "%d/%m/%Y %H:%M")
+            # Check if day and time match
+            if date_striped.day == date and date_striped.time().strftime("%H:%M") == time:
+                # Set the index
+                index = datetime_to_index[date_str]
+        
         direction_onehot = encoder.transform([[direction_input]])
+        # Prepare the input for prediction
         X_pred = features[index - 4 : index].reshape(1, 4, 9)
 
         for i in range(4):
@@ -160,9 +177,9 @@ def predict_flow_lstm_optimized(scats_num, time, direction):
 
         return scaler.inverse_transform(predicted.reshape(-1, 1))[0][0]
 
-    predicted_flow = lstm_flow(time, direction, model, csv_path)
+    predicted_flow = lstm_flow(date_time, direction, model, csv_path)
 
-    print(f"Predicted traffic flow at {time} in direction {direction}: {predicted_flow:.2f} vehicles per 15 minutes")
+    print(f"Predicted traffic flow at {date_time} in direction {direction}: {predicted_flow:.2f} vehicles per 15 minutes")
     print("----------------------------------------")
 
     return predicted_flow
