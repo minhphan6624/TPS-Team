@@ -43,29 +43,23 @@ def update_map(html):
     map_widget.setHtml(html, QtCore.QUrl(""))
 
 
-def create_marker(scat, map_obj, color="green", size=30):
+def create_marker(scat, map_obj):
     html = f"""
         <h4>Scat Number: {scat}</h4>
+        
         """
     iframe = folium.IFrame(html=html, width=150, height=100)
     popup = folium.Popup(iframe, max_width=200)
-
-    custom_icon = folium.CustomIcon(
-        icon_image="assets/pin.png",
-        icon_size=(size, size),
-        icon_anchor=(size // 2, size),
-        popup_anchor=(0, -size)
-    )
 
     folium.Marker(
         graph_maker.get_coords_by_scat(int(scat)),
         popup=popup,
         tooltip=f"Scat {scat}",
-        icon=custom_icon,
+        icon=folium.Icon(color="green"),
     ).add_to(map_obj)
 
 
-def run_pathfinding(start, end, datetime):
+def run_pathfinding(start, end, time):
     global graph, menu_layout
 
     logger.log(f"Running pathfinding algorithm from {start} to {end}")
@@ -78,14 +72,7 @@ def run_pathfinding(start, end, datetime):
 
     logger.log(f"Using start and end node [{start}, {end}]")
 
-    # format datetime
-    datetime_split = datetime.split(" ")
-    date = datetime_split[0]
-    time = round_to_nearest_15_minutes(datetime_split[1])
-    formatted_datetime = f"{date} {time}"
-
-
-    paths = astar.astar(graph, start, int(end), formatted_datetime)
+    paths = astar.astar(graph, start, int(end), time)
 
     if paths is None or len(paths) == 0:
         logger.log("No paths found.")
@@ -101,7 +88,7 @@ def run_pathfinding(start, end, datetime):
     # Draw each path with a different color
     for path_index, path_info in enumerate(paths):
         color = path_colors[path_index % len(path_colors)]  # Cycle through colors if more paths than colors
-
+        
         print(path_info)
         
         logger.log(f"\nDrawing Path {path_index + 1} in {color}")
@@ -115,9 +102,7 @@ def run_pathfinding(start, end, datetime):
             end_lat, end_long = graph_maker.get_coords_by_scat(next_node)
 
             logger.log(f"Visited: {current} -> {next_node}")
-            # create nodes on the map
-            create_marker(current, map_obj, "blue")
-
+            
             # Create the path line with the current color
             folium.PolyLine(
                 [(start_lat, start_long), (end_lat, end_long)],
@@ -187,9 +172,8 @@ def make_menu():
     end_scats.setPlaceholderText("End Scats Number")
     menu_layout.addWidget(end_scats)
 
-    datetime_select = QtWidgets.QDateTimeEdit()
-    datetime_select.setDateTime(QtCore.QDateTime.currentDateTime())
-    menu_layout.addWidget(datetime_select)
+    time_select = QtWidgets.QTimeEdit()
+    menu_layout.addWidget(time_select)
 
     # Button to run pathfinding algorithm
     run_button = QPushButton("Run Pathfinding")
@@ -197,7 +181,7 @@ def make_menu():
         lambda: run_pathfinding(
             start_scats.text(),
             end_scats.text(),
-            datetime_select.text(),
+            round_to_nearest_15_minutes(time_select.text()),
         )
     )
     menu_layout.addWidget(run_button)
