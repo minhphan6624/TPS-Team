@@ -95,6 +95,8 @@ def run_pathfinding(start, end, datetime):
         location=(-37.820946, 145.060832), zoom_start=12, tiles="CartoDB Positron"
     )
 
+    draw_all_scats(map_obj)
+
     logger.log(f"Using start and end node [{start}, {end}]")
 
     # format datetime
@@ -109,19 +111,21 @@ def run_pathfinding(start, end, datetime):
     if paths is None or len(paths) == 0:
         logger.log("No paths found.")
         return
-
-    # Define a list of distinct colors for different paths
-    path_colors = ['red', 'blue', 'green', 'purple', 'orange', 'darkblue']
     
     # add start and end markers on the map with the displayed scat number
     create_marker(start, map_obj)
     create_marker(end, map_obj)
 
+    # Reverse the paths so the last path is drawn first
+    reversed_paths = list(reversed(paths))
     # Draw each path with a different color
-    for path_index, path_info in enumerate(paths):
-        color = path_colors[path_index % len(path_colors)]  # Cycle through colors if more paths than colors
+    for path_index, path_info in enumerate(reversed_paths):
+        color = "#A0C8FF"
+        # if last path, make it blue
+        if path_index == len(reversed_paths) - 1:
+            color = "blue"
 
-        print(path_info)
+        # print(path_info)
         
         logger.log(f"\nDrawing Path {path_index + 1} in {color}")
         
@@ -250,6 +254,11 @@ def create_map():
     )
     map_widget = QtWebEngineWidgets.QWebEngineView()
 
+    draw_all_scats(map_obj)
+
+    return map_obj
+
+def draw_all_scats(map_obj):
     # Get all scat numbers and long lats
     scats = graph_maker.get_all_scats()
 
@@ -257,8 +266,6 @@ def create_map():
     for scat in scats:
         # create map markers for the scats
         create_circle_marker(scat, map_obj)
-
-    return map_obj
 
 
 def make_window():
