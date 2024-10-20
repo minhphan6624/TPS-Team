@@ -38,7 +38,7 @@ def parse_node(node_str):
     return int(node_str.split("_")[0])
 
 
-def astar(graph, start_node, end_node, date_time, num_paths=4):
+def astar(graph, start_node, end_node, date_time, num_paths=5):
     open_set = []
     closed_set = set()
     found_paths = []
@@ -52,7 +52,7 @@ def astar(graph, start_node, end_node, date_time, num_paths=4):
     
     while open_set and len(found_paths) < num_paths:
         current_f, current_node = heapq.heappop(open_set)
-        
+
         #logger.log(f"Visiting: {current_node}")
         
         if parse_node(current_node) == end_node:
