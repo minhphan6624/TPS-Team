@@ -25,7 +25,7 @@ import utilities.logger as logger
 import predict as prediction_module
 import main as main
 
-from utilities.time import round_to_nearest_15_minutes
+from utilities.time import *
 
 # Constants
 WINDOW_TITLE = "TrafficPredictionSystem"

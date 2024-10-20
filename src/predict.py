@@ -1,7 +1,7 @@
 import sys
-import time
 
 from utilities import logger
+from utilities.time import *
 
 sys.dont_write_bytecode = True
 
@@ -82,7 +82,7 @@ def predict_traffic_flow(datetime_input, direction_input, model_path, data_path)
     # Combine flow and direction features (1 for flow + 8 for directions = 9 features)
     features = np.hstack([flow.reshape(-1, 1), direction_encoded])
 
-    index = time.get_date_time_index(df, datetime_input)
+    index = get_date_time_index(df, datetime_input)
     
     # One-hot encode the input direction
     direction_categories = ["N", "S", "E", "W", "NE", "NW", "SE", "SW"]
@@ -143,7 +143,7 @@ def predict_flow_lstm_optimized(scats_num, date_time, direction):
         direction_encoded = encoder.fit_transform(df[direction_attr].values.reshape(-1, 1))
         features = np.hstack([flow.reshape(-1, 1), direction_encoded])
 
-        index = time.get_date_time_index(df, datetime_input)
+        index = get_date_time_index(df, datetime_input)
         
         direction_onehot = encoder.transform([[direction_input]])
         # Prepare the input for prediction
