@@ -43,7 +43,11 @@ def update_map(html):
     map_widget.setHtml(html, QtCore.QUrl(""))
 
 
-def create_marker(scat, map_obj, color="green", size=30):
+def create_marker(scat, map_obj, color="green", size=30, tooltip=None):
+    tip = "Scat " + str(scat)
+    if tooltip:
+        tip = tooltip
+
     html = f"""
         <h4>Scat Number: {scat}</h4>
         """
@@ -60,11 +64,14 @@ def create_marker(scat, map_obj, color="green", size=30):
     folium.Marker(
         graph_maker.get_coords_by_scat(int(scat)),
         popup=popup,
-        tooltip=f"Scat {scat}",
+        tooltip=tip,
         icon=custom_icon,
     ).add_to(map_obj)
 
-def create_circle_marker(scat, map_obj, color="grey", size=2):
+def create_circle_marker(scat, map_obj, color="grey", size=2, tooltip=None):
+    tip = "Scat " + str(scat)
+    if tooltip:
+        tip = tooltip
     
     html = f"""
         <h4>Scat Number: {scat}</h4>
@@ -80,7 +87,7 @@ def create_circle_marker(scat, map_obj, color="grey", size=2):
         fill_color=color,
         fill_opacity=0.6,
         popup=popup,
-        tooltip=f"Scat {scat}",
+        tooltip=tip,
     ).add_to(map_obj)
 
 
@@ -111,13 +118,10 @@ def run_pathfinding(start, end, datetime):
     if paths is None or len(paths) == 0:
         logger.log("No paths found.")
         return
-    
-    # add start and end markers on the map with the displayed scat number
-    create_marker(start, map_obj)
-    create_marker(end, map_obj)
 
     # Reverse the paths so the last path is drawn first
     reversed_paths = list(reversed(paths))
+    display_index = len(reversed_paths) - 1
     # Draw each path with a different color
     for path_index, path_info in enumerate(reversed_paths):
         color = "#A0C8FF"
@@ -149,12 +153,17 @@ def run_pathfinding(start, end, datetime):
                 color=color,
                 weight=2.5 if path_index == 0 else 2.0,
                 opacity=1.0 if path_index == 0 else 0.8,
-                popup=f'Path {path_index + 1}',
-                tooltip=f'Path {path_index + 1} - Segment: {current} → {next_node}'
+                popup=f'Path {display_index + 1}',
+                tooltip=f'Path {display_index + 1} - Segment: {current} → {next_node}'
             ).add_to(map_obj)
-            
+        
         # Add a summary for this path
-        logger.log(f"Path {path_index + 1} - {len(path_info['path'])} nodes, Color: {color}")
+        logger.log(f"Path {display_index + 1} - {len(path_info['path'])} nodes, Color: {color}")
+        display_index -= 1
+    
+     # add start and end markers on the map with the displayed scat number
+    create_circle_marker(start, map_obj, color="red", size=3, tooltip=f"Start - {start}")
+    create_marker(end, map_obj, tooltip=f"End - {end}")
 
     update_map(map_obj._repr_html_())
     
@@ -185,8 +194,6 @@ def run_pathfinding(start, end, datetime):
 def make_menu():
     global menu_layout
     logger.log("Creating menu...")
-
-    prediction_module.init()
 
     # Create a widget for the menu
     menu_widget = QWidget()
@@ -302,7 +309,8 @@ def run():
         WINDOW_LOCATION[0], WINDOW_LOCATION[1], WINDOW_SIZE[0], WINDOW_SIZE[1]
     )
 
-    graph_maker.load_data()
+    graph_maker.init()
+    prediction_module.init()
     window.setCentralWidget(make_window())
 
     logger.log("Window created.")
