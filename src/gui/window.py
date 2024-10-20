@@ -64,6 +64,25 @@ def create_marker(scat, map_obj, color="green", size=30):
         icon=custom_icon,
     ).add_to(map_obj)
 
+def create_circle_marker(scat, map_obj, color="grey", size=2):
+    
+    html = f"""
+        <h4>Scat Number: {scat}</h4>
+        """
+    iframe = folium.IFrame(html=html, width=150, height=100)
+    popup = folium.Popup(iframe, max_width=200)
+
+    folium.CircleMarker(
+        graph_maker.get_coords_by_scat(int(scat)),
+        radius=size,
+        color=color,
+        fill=True,
+        fill_color=color,
+        fill_opacity=0.6,
+        popup=popup,
+        tooltip=f"Scat {scat}",
+    ).add_to(map_obj)
+
 
 def run_pathfinding(start, end, datetime):
     global graph, menu_layout
@@ -115,6 +134,10 @@ def run_pathfinding(start, end, datetime):
             end_lat, end_long = graph_maker.get_coords_by_scat(next_node)
 
             logger.log(f"Visited: {current} -> {next_node}")
+
+            # if the node is not the first or last node draw cirlce
+            if i != 0 and i != len(path_info['path']) - 1:
+                create_circle_marker(current, map_obj, color=color, size=2)
 
             # Create the path line with the current color
             folium.PolyLine(
@@ -233,7 +256,7 @@ def create_map():
     logger.log(f"Creating nodes...")
     for scat in scats:
         # create map markers for the scats
-        create_marker(scat, map_obj)
+        create_circle_marker(scat, map_obj)
 
     return map_obj
 
