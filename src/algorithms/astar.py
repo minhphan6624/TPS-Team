@@ -21,7 +21,7 @@ def heuristic_function(nodeStart, nodeEnd, date_time):
     end_scat = nodeEnd.split("_")[0]
     end_direction = nodeEnd.split("_")[1]
 
-    flow = prediction_module.predict_flow_lstm_optimized(end_scat, date_time, end_direction)
+    flow = prediction_module.predict_flow(end_scat, date_time, end_direction, "saes")
 
     if "_" in nodeStart:
         nodeStart = nodeStart.split("_")[0]
