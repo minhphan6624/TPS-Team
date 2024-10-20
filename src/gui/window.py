@@ -115,8 +115,6 @@ def run_pathfinding(start, end, datetime):
             end_lat, end_long = graph_maker.get_coords_by_scat(next_node)
 
             logger.log(f"Visited: {current} -> {next_node}")
-            # create nodes on the map
-            create_marker(current, map_obj, "blue")
 
             # Create the path line with the current color
             folium.PolyLine(

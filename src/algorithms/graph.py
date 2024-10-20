@@ -210,7 +210,7 @@ def calculate_speed(start, flow):
     B = - 2*velocity*A
 
     # calculate the speed of the cars at the start node
-    speed = (-B + math.sqrt(B**2 - 4*A*flow))/(2*A)
+    speed = abs((-B + math.sqrt(B**2 - 4*A*flow))/(2*A))
 
     return speed
 
