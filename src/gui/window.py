@@ -8,6 +8,7 @@ from PyQt5.QtWidgets import (
     QLabel,
     QPushButton,
     QPlainTextEdit,
+    QComboBox
 )
 from PyQt5 import QtWebEngineWidgets, QtCore, QtWidgets
 from folium import plugins, IFrame
@@ -35,13 +36,13 @@ WINDOW_LOCATION = (160, 70)
 # Global variables
 graph = None
 map_widget = None
+selected_model = "seas" # Default model
 
 
 def update_map(html):
     global map_widget
 
     map_widget.setHtml(html, QtCore.QUrl(""))
-
 
 def create_marker(scat, map_obj, color="green", size=30, tooltip=None):
     tip = "Scat " + str(scat)
@@ -89,7 +90,6 @@ def create_circle_marker(scat, map_obj, color="grey", size=2, tooltip=None):
         popup=popup,
         tooltip=tip,
     ).add_to(map_obj)
-
 
 def run_pathfinding(start, end, datetime):
     global graph, menu_layout
@@ -219,9 +219,23 @@ def make_menu():
     end_scats.setPlaceholderText("End Scats Number")
     menu_layout.addWidget(end_scats)
 
+    # Date and time input box
     datetime_select = QtWidgets.QDateTimeEdit()
     datetime_select.setDateTime(QtCore.QDateTime.currentDateTime())
     menu_layout.addWidget(datetime_select)
+
+    # Dropdown for selecting the model
+    model_dropdown = QComboBox()
+    
+    model_dropdown.addItem("SEAs")
+    model_dropdown.addItem("CNN")
+    model_dropdown.addItem("LSTM")
+    model_dropdown.addItem("GRU")
+
+    model_dropdown.setCurrentText("SEAs")  # Set default selection
+    # model_dropdown.currentIndexChanged.connect(update_selected_model)
+    model_dropdown.currentTextChanged.connect(lambda text: update_selected_model(text))
+    menu_layout.addWidget(model_dropdown)
 
     # Button to run pathfinding algorithm
     run_button = QPushButton("Run Pathfinding")
@@ -249,6 +263,17 @@ def make_menu():
 
     return menu_widget
 
+# Function to update the selected model for training
+def update_selected_model(model):
+    global selected_model
+    model_map = {
+        "SEAs": "saes",
+        "CNN": "cnn",
+        "LSTM": "lstm",
+        "GRU": "gru"
+    }
+    selected_model = model_map[model]
+    logger.log(f"Selected model: {selected_model}")
 
 def create_map():
     global graph, map_widget
@@ -274,7 +299,6 @@ def draw_all_scats(map_obj):
         # create map markers for the scats
         create_circle_marker(scat, map_obj)
 
-
 def make_window():
     global graph, map_widget
 
@@ -296,12 +320,11 @@ def make_window():
 
     return main_widget
 
-
 def run():
     global app, graph
 
     app = QApplication(sys.argv)
-    qdarktheme.setup_theme("dark")
+    # qdarktheme.setup_theme("dark")
 
     window = QMainWindow()
     window.setWindowTitle(WINDOW_TITLE)
