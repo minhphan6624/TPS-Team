@@ -10,18 +10,20 @@ import random
 PATH_COST = 30
 
 heuristic_dict = {}
+flow_dict = {}
 
 def heuristic_function(nodeStart, nodeEnd, date_time):
     global overall_time, overall_distance
 
-    print(
-        f"Calculating heuristic cost for NodeStart -> {nodeStart}, NodeEnd -> {nodeEnd}"
-    )
+    print(f"Calculating heuristic cost for NodeStart -> {nodeStart}, NodeEnd -> {nodeEnd}")
 
     end_scat = nodeEnd.split("_")[0]
     end_direction = nodeEnd.split("_")[1]
 
     flow = prediction_module.predict_flow(end_scat, date_time, end_direction, "saes")
+
+    # add flow by scat to dictionary
+    flow_dict[end_scat] = flow
 
     if "_" in nodeStart:
         nodeStart = nodeStart.split("_")[0]
