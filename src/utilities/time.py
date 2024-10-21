@@ -23,6 +23,7 @@ def round_to_nearest_15_minutes(time_str):
     # Return the formatted time
     return time_obj.strftime(f"%H:{rounded_minutes:02d}")
 
+
 def validate_date_time(date_time):
     formats = [
         "%d/%m/%Y %H:%M",  # Already in the correct format
@@ -31,8 +32,9 @@ def validate_date_time(date_time):
         "%d-%m-%Y %H:%M",  # Dash-separated format
         "%d/%m/%Y %H:%M:%S",  # With seconds
         "%Y-%m-%dT%H:%M:%S",  # ISO format with T separator
+        "%d/%m/%y %H:%M",  # Full year format
     ]
-    
+
     for fmt in formats:
         try:
             # Try to parse the date string
@@ -44,11 +46,12 @@ def validate_date_time(date_time):
 
     raise ValueError(f"Unable to parse date string: {date_time}")
 
+
 def get_date_time_index(df, date_time):
     # validate the date time
     date_time = validate_date_time(date_time)
     # Create a dictionary to map the datetime to the index
-    datetime_to_index = { date_time: i for i, date_time in enumerate(df["15 Minutes"]) }
+    datetime_to_index = {date_time: i for i, date_time in enumerate(df["15 Minutes"])}
     # split into date and time
     datetime_value = datetime.strptime(date_time, "%d/%m/%Y %H:%M")
     date = datetime_value.day
@@ -63,9 +66,11 @@ def get_date_time_index(df, date_time):
         if date_striped.day == date and date_striped.time().strftime("%H:%M") == time:
             # Set the index
             index = datetime_to_index[date_str]
-    
+
     if index == 0:
-        logger.log("Not enough historical data for the given time. Predicting for the next or previous day.")
+        logger.log(
+            "Not enough historical data for the given time. Predicting for the next or previous day."
+        )
         new_date = date
         if date == 31:
             new_date -= 1
@@ -75,7 +80,10 @@ def get_date_time_index(df, date_time):
             # Parse each date in the array
             date_striped = datetime.strptime(date_str, "%d/%m/%Y %H:%M")
             # Check if day and time match
-            if date_striped.day == new_date and date_striped.time().strftime("%H:%M") == time:
+            if (
+                date_striped.day == new_date
+                and date_striped.time().strftime("%H:%M") == time
+            ):
                 # Set the index
                 index = datetime_to_index[date_str]
 
