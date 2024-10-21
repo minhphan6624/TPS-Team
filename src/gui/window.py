@@ -113,7 +113,7 @@ def run_pathfinding(start, end, datetime):
     formatted_datetime = f"{date} {time}"
 
 
-    paths = astar.astar(graph, start, int(end), formatted_datetime)
+    paths = astar.astar(graph, start, int(end), formatted_datetime, model = selected_model)
 
     if paths is None or len(paths) == 0:
         logger.log("No paths found.")
