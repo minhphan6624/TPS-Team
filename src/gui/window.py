@@ -36,13 +36,14 @@ WINDOW_LOCATION = (160, 70)
 # Global variables
 graph = None
 map_widget = None
-selected_model = "seas" # Default model
+selected_model = "seas"  # Default model
 
 
 def update_map(html):
     global map_widget
 
     map_widget.setHtml(html, QtCore.QUrl(""))
+
 
 def create_marker(scat, map_obj, color="green", size=30, tooltip=None):
     tip = "Scat " + str(scat)
@@ -69,11 +70,12 @@ def create_marker(scat, map_obj, color="green", size=30, tooltip=None):
         icon=custom_icon,
     ).add_to(map_obj)
 
+
 def create_circle_marker(scat, map_obj, color="grey", size=2, tooltip=None):
     tip = "Scat " + str(scat)
     if tooltip:
         tip = tooltip
-    
+
     html = f"""
         <h4>Scat Number: {scat}</h4>
         """
@@ -90,6 +92,7 @@ def create_circle_marker(scat, map_obj, color="grey", size=2, tooltip=None):
         popup=popup,
         tooltip=tip,
     ).add_to(map_obj)
+
 
 def run_pathfinding(start, end, datetime):
     global graph, menu_layout
@@ -112,7 +115,6 @@ def run_pathfinding(start, end, datetime):
     time = round_to_nearest_15_minutes(datetime_split[1])
     formatted_datetime = f"{date} {time}"
 
-
     paths = astar.astar(graph, start, int(end), formatted_datetime)
 
     if paths is None or len(paths) == 0:
@@ -130,9 +132,9 @@ def run_pathfinding(start, end, datetime):
             color = "blue"
 
         # print(path_info)
-        
+
         logger.log(f"\nDrawing Path {path_index + 1} in {color}")
-        
+
         # Draw the path segments
         for i in range(len(path_info['path']) - 1):
             current = path_info['path'][i]
@@ -156,17 +158,19 @@ def run_pathfinding(start, end, datetime):
                 popup=f'Path {display_index + 1}',
                 tooltip=f'Path {display_index + 1} - Segment: {current} → {next_node}'
             ).add_to(map_obj)
-        
+
         # Add a summary for this path
-        logger.log(f"Path {display_index + 1} - {len(path_info['path'])} nodes, Color: {color}")
+        logger.log(
+            f"Path {display_index + 1} - {len(path_info['path'])} nodes, Color: {color}")
         display_index -= 1
-    
+
      # add start and end markers on the map with the displayed scat number
-    create_circle_marker(start, map_obj, color="red", size=3, tooltip=f"Start - {start}")
+    create_circle_marker(start, map_obj, color="red",
+                         size=3, tooltip=f"Start - {start}")
     create_marker(end, map_obj, tooltip=f"End - {end}")
 
     update_map(map_obj._repr_html_())
-    
+
     # should display the time as well
     path_display = QLabel(f"Pathfinding complete. {len(paths)} paths found.")
     path_display.setStyleSheet(
@@ -189,7 +193,9 @@ def run_pathfinding(start, end, datetime):
     path_text.setStyleSheet(
         "font-size: 12px; color: white; background-color: #333; padding: 5px;"
     )
-    menu_layout.addWidget(path_text) # this will add a text box with the path information everytime you run the pathfinding algorithm
+    # this will add a text box with the path information everytime you run the pathfinding algorithm
+    menu_layout.addWidget(path_text)
+
 
 def make_menu():
     global menu_layout
@@ -226,15 +232,16 @@ def make_menu():
 
     # Dropdown for selecting the model
     model_dropdown = QComboBox()
-    
-    model_dropdown.addItem("SEAs")
+
+    model_dropdown.addItem("SAEs")
     model_dropdown.addItem("CNN")
     model_dropdown.addItem("LSTM")
     model_dropdown.addItem("GRU")
 
-    model_dropdown.setCurrentText("SEAs")  # Set default selection
+    model_dropdown.setCurrentText("SAEs")  # Set default selection
     # model_dropdown.currentIndexChanged.connect(update_selected_model)
-    model_dropdown.currentTextChanged.connect(lambda text: update_selected_model(text))
+    model_dropdown.currentTextChanged.connect(
+        lambda text: update_selected_model(text))
     menu_layout.addWidget(model_dropdown)
 
     # Button to run pathfinding algorithm
@@ -250,7 +257,8 @@ def make_menu():
 
     # Button to reset the map (doesn't currently work as expected)
     reset_button = QPushButton("Reset")
-    reset_button.clicked.connect(lambda: update_map(create_map()._repr_html_()))
+    reset_button.clicked.connect(
+        lambda: update_map(create_map()._repr_html_()))
     # updates the map but the visual doesn't update
     menu_layout.addWidget(reset_button)
 
@@ -264,16 +272,19 @@ def make_menu():
     return menu_widget
 
 # Function to update the selected model for training
+
+
 def update_selected_model(model):
     global selected_model
     model_map = {
-        "SEAs": "saes",
+        "SAEs": "saes",
         "CNN": "cnn",
         "LSTM": "lstm",
         "GRU": "gru"
     }
     selected_model = model_map[model]
     logger.log(f"Selected model: {selected_model}")
+
 
 def create_map():
     global graph, map_widget
@@ -290,6 +301,7 @@ def create_map():
 
     return map_obj
 
+
 def draw_all_scats(map_obj):
     # Get all scat numbers and long lats
     scats = graph_maker.get_all_scats()
@@ -298,6 +310,7 @@ def draw_all_scats(map_obj):
     for scat in scats:
         # create map markers for the scats
         create_circle_marker(scat, map_obj)
+
 
 def make_window():
     global graph, map_widget
@@ -319,6 +332,7 @@ def make_window():
     main_layout.addWidget(map_widget)
 
     return main_widget
+
 
 def run():
     global app, graph
