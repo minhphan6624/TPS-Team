@@ -94,8 +94,22 @@ def create_circle_marker(scat, map_obj, color="grey", size=2, tooltip=None):
     ).add_to(map_obj)
 
 # Function to run the pathfinding algorithm
+
+def get_threshold_color(flow):
+    if flow <= 100:
+        return "blue"
+    elif flow > 100 and flow < 200:
+        return "orange"
+    elif flow >= 200 and flow <= 250:
+        return "yellow"
+    elif flow > 250:
+        return "red"
+
 def run_pathfinding(start, end, datetime):
     global graph, menu_layout
+
+    # clear flow data
+    astar.flow_dict = {}
 
     logger.log(f"Running pathfinding algorithm from {start} to {end}")
 
@@ -124,17 +138,18 @@ def run_pathfinding(start, end, datetime):
     # Reverse the paths so the last path is drawn first
     reversed_paths = list(reversed(paths))
     display_index = len(reversed_paths) - 1
+    is_main_path = True
+
     # Draw each path with a different color
     for path_index, path_info in enumerate(reversed_paths):
-        color = "#A0C8FF"
+        is_main_path = False
+
         # if last path, make it blue
         if path_index == len(reversed_paths) - 1:
-            color = "blue"
+            is_main_path = True
 
         # print(path_info)
-
         logger.log(f"\nDrawing Path {path_index + 1} in {color}")
-
         # Draw the path segments
         for i in range(len(path_info['path']) - 1):
             current = path_info['path'][i]
@@ -145,11 +160,23 @@ def run_pathfinding(start, end, datetime):
 
             logger.log(f"Visited: {current} -> {next_node}")
 
+            # If path is a main path
+            if is_main_path:
+                # Check thresholds for traffic flow, from dict.
+                flow = astar.flow_dict.get(f"{next_node}")
+
+                if flow:
+                    color = get_threshold_color(flow)
+                else:
+                    logger.log(f"Flow data not found for {current}_{next_node}")
+                    color = "red"
+            else:
+                color = "#A0C8FF"
+
             # if the node is not the first or last node draw cirlce
             if i != 0 and i != len(path_info['path']) - 1:
                 create_circle_marker(current, map_obj, color=color, size=2)
 
-            # Create the path line with the current color
             folium.PolyLine(
                 [(start_lat, start_long), (end_lat, end_long)],
                 color=color,
@@ -170,6 +197,9 @@ def run_pathfinding(start, end, datetime):
     create_marker(end, map_obj, tooltip=f"End - {end}")
 
     update_map(map_obj._repr_html_())
+    
+    logger.log(f"Flow Dict -> {astar.flow_dict}")
+
 
     # should display the time as well
     path_display = QLabel(f"Pathfinding complete. {len(paths)} paths found.")
