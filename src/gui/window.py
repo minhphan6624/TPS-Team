@@ -36,7 +36,7 @@ WINDOW_LOCATION = (160, 70)
 # Global variables
 graph = None
 map_widget = None
-selected_model = "seas"  # Default model
+selected_model = "saes"  # Default model
 
 
 def update_map(html):
@@ -149,7 +149,6 @@ def run_pathfinding(start, end, datetime):
             is_main_path = True
 
         # print(path_info)
-        logger.log(f"\nDrawing Path {path_index + 1} in {color}")
         # Draw the path segments
         for i in range(len(path_info['path']) - 1):
             current = path_info['path'][i]
@@ -378,7 +377,7 @@ def run():
     )
 
     graph_maker.init()
-    prediction_module.init()
+    #prediction_module.init()
     window.setCentralWidget(make_window())
 
     logger.log("Window created.")

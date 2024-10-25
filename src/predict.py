@@ -1,9 +1,9 @@
 import sys
 
+sys.dont_write_bytecode = True
+
 from utilities import logger
 from utilities.time import *
-
-sys.dont_write_bytecode = True
 
 from tcn import TCN
 import os
@@ -20,6 +20,7 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 
 MODEL_DIR = "./saved_models"
+NEW_MODEL_DIR = "./saved_new_models"
 CSV_DIR = "../training_data/new_traffic_flows"
 
 # key value (scats_num) -> model instance
@@ -95,8 +96,10 @@ def predict_traffic_flow(datetime_input, direction_input, model_path, data_path)
 
     # Prepare the input for prediction
     lags = 4
+
     if index < lags:
-        raise ValueError("Not enough historical data for the given time.")
+        #raise ValueError("Not enough historical data for the given time.")
+        return 0
 
     # Extract the last `lags` timesteps of features (flow + direction)
     X_pred = features[index - lags : index].reshape(
@@ -177,13 +180,108 @@ def predict_flow(scats_num, date_time, direction, model_type):
 
     return predicted_flow
 
+def predict_new_model(scats_num, date_time, direction, model_type="lstm"):
+    try:
+        # Define paths
+        model_path = f"{NEW_MODEL_DIR}/{scats_num}_{model_type}.keras"
+        csv_path = f"{CSV_DIR}/{scats_num}_trafficflow.csv"
+        scaler_path = f"{NEW_MODEL_DIR}/{scats_num}_{model_type}_scalers.npz"
+
+        # Check if files exist
+        if not os.path.exists(model_path):
+            raise FileNotFoundError(f"Model file not found: {model_path}")
+        if not os.path.exists(csv_path):
+            raise FileNotFoundError(f"CSV file not found: {csv_path}")
+        if not os.path.exists(scaler_path):
+            raise FileNotFoundError(f"Scalers file not found: {scaler_path}")
+
+        # Load the model
+        model = load_model(model_path)
+
+        # Load the historical data
+        df = pd.read_csv(csv_path, encoding="utf-8").fillna(0)
+
+        # Load scalers and encoder
+        saved_data = np.load(scaler_path, allow_pickle=True)
+        flow_scaler = saved_data['flow_scaler'].item()
+        temporal_scaler = saved_data['temporal_scaler'].item()
+        direction_encoder = saved_data['direction_encoder'].item()
+
+        # Convert input datetime string to datetime object
+        target_datetime = pd.to_datetime(date_time, format='%d/%m/%Y %H:%M')
+        
+        # Extract temporal features for target datetime
+        temporal_features = np.array([[
+            target_datetime.hour,
+            target_datetime.minute,
+            target_datetime.dayofweek,
+            target_datetime.day,
+            target_datetime.month
+        ]])
+        
+        # Scale temporal features
+        scaled_temporal = temporal_scaler.transform(temporal_features)
+        
+        # Encode direction
+        direction_encoded = direction_encoder.transform([[direction]])
+        
+        # Process historical data
+        df['datetime'] = pd.to_datetime(df['15 Minutes'], dayfirst=True)
+        df = df.sort_values('datetime')
+        
+        # Find the last 4 flow values before target_datetime
+        mask = df['datetime'] < target_datetime
+        recent_flows = df[mask].tail(4)['Lane 1 Flow (Veh/15 Minutes)'].values
+        
+        if len(recent_flows) < 4:
+            raise ValueError(f"Not enough historical data. Need 4 previous timestamps.")
+        
+        # Scale the historical flows
+        scaled_flows = flow_scaler.transform(recent_flows.reshape(-1, 1)).reshape(-1)
+        
+        # Create the input sequence
+        X_pred = np.zeros((1, 4, 14))  # 14 features
+        
+        # Fill in historical values and features
+        for i in range(4):
+            X_pred[0, i, 0] = scaled_flows[i]  # Flow
+            X_pred[0, i, 1:6] = scaled_temporal[0]  # Temporal features
+            X_pred[0, i, 6:] = direction_encoded[0]  # Direction
+
+        if model_type.lower() == "saes":
+            # Flatten the input from (1, 4, 14) to (1, 56)
+            X_pred = X_pred.reshape(1, -1)
+
+        # Make prediction
+        predicted = model.predict(X_pred, verbose=0)
+        predicted_flow = flow_scaler.inverse_transform(predicted.reshape(-1, 1))[0][0]
+
+        print(f"\n\n[{model_type}] Predicted traffic flow for scats {scats_num} at {date_time} in direction {direction}: {predicted_flow:.2f} vehicles per 15 minutes\n\n")
+        return predicted_flow
+
+    except Exception as e:
+        print(f"Error in prediction: {str(e)}")
+        return None
+
 
 def main():
+
+    date_time = "25/10/2006 01:00"
+    direction = "W"
+    scats_num = "2000"
+
+    predict_new_model(scats_num,date_time,direction, "saes")
+    predict_new_model(scats_num,date_time,direction, "lstm")
+    predict_new_model(scats_num,date_time,direction, "gru")
+    predict_new_model(scats_num,date_time,direction, "cnn")
+
+
+    '''
     # Load Keras models and predict traffic flow including directions
     for model_name in MODELS:
         model_path = f"./saved_models/{model_name}.keras"
         print(model_path)
-        cpredict(model_path, TEST_CSV_DIRECTION)
+        cpredict(model_path, TEST_CSV_DIRECTION)'''
 
 
 def cpredict(model_path, data_path):
