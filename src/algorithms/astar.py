@@ -12,7 +12,7 @@ PATH_COST = 30
 heuristic_dict = {}
 flow_dict = {}
 
-def heuristic_function(nodeStart, nodeEnd, date_time):
+def heuristic_function(nodeStart, nodeEnd, date_time, model):
     global overall_time, overall_distance
 
     print(f"Calculating heuristic cost for NodeStart -> {nodeStart}, NodeEnd -> {nodeEnd}")
@@ -20,7 +20,7 @@ def heuristic_function(nodeStart, nodeEnd, date_time):
     end_scat = nodeEnd.split("_")[0]
     end_direction = nodeEnd.split("_")[1]
 
-    flow = prediction_module.predict_flow(end_scat, date_time, end_direction, "saes")
+    flow = prediction_module.predict_flow(end_scat, date_time, end_direction, model)
 
     # add flow by scat to dictionary
     flow_dict[end_scat] = flow
@@ -40,7 +40,7 @@ def parse_node(node_str):
     return int(node_str.split("_")[0])
 
 
-def astar(graph, start_node, end_node, date_time, num_paths=5):
+def astar(graph, start_node, end_node, date_time, num_paths=5, model = "saes"):
     open_set = []
     closed_set = set()
     found_paths = []
@@ -108,7 +108,7 @@ def astar(graph, start_node, end_node, date_time, num_paths=5):
                 # Store the parent relationship
                 parent[neighbor] = current_node
                 g_score[neighbor] = tentative_g_score
-                f_score[neighbor] = g_score[neighbor] + heuristic_function(current_node, neighbor, date_time)
+                f_score[neighbor] = g_score[neighbor] + heuristic_function(current_node, neighbor, date_time, model)
                 
                 # Add a small random factor to promote path diversity
                 f_score[neighbor] += (random.uniform(0, 0.1) * PATH_COST)
