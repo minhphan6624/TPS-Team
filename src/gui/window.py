@@ -44,6 +44,7 @@ def update_map(html):
 
     map_widget.setHtml(html, QtCore.QUrl(""))
 
+# Create PIN markers for the SCATs site on the map
 def create_marker(scat, map_obj, color="green", size=30, tooltip=None):
     tip = "Scat " + str(scat)
     if tooltip:
@@ -69,6 +70,7 @@ def create_marker(scat, map_obj, color="green", size=30, tooltip=None):
         icon=custom_icon,
     ).add_to(map_obj)
 
+# Create circle markers for the SCATs site on the map
 def create_circle_marker(scat, map_obj, color="grey", size=2, tooltip=None):
     tip = "Scat " + str(scat)
     if tooltip:
@@ -91,6 +93,7 @@ def create_circle_marker(scat, map_obj, color="grey", size=2, tooltip=None):
         tooltip=tip,
     ).add_to(map_obj)
 
+# Function to run the pathfinding algorithm
 def run_pathfinding(start, end, datetime):
     global graph, menu_layout
 
@@ -191,6 +194,7 @@ def run_pathfinding(start, end, datetime):
     )
     menu_layout.addWidget(path_text) # this will add a text box with the path information everytime you run the pathfinding algorithm
 
+# Create the menu widget for the GUI
 def make_menu():
     global menu_layout
     logger.log("Creating menu...")
