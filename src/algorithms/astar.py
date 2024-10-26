@@ -20,6 +20,9 @@ def heuristic_function(nodeStart, nodeEnd, date_time, model):
     end_scat = nodeEnd.split("_")[0]
     end_direction = nodeEnd.split("_")[1]
 
+    # Old predict
+    #flow = prediction_module.predict_flow(end_scat, date_time, end_direction, model)
+
     # New predict
     flow = prediction_module.predict_new_model(end_scat, date_time, end_direction, model)
 
@@ -51,10 +54,10 @@ def astar(graph, start_node, end_node, date_time, num_paths=5, model = "lstm"):
     g_score = {start_node: 0}
     f_score = {start_node: 0}
     
-    heapq.heappush(open_set, start_node)
+    heapq.heappush(open_set, (f_score[start_node], start_node))
     
     while open_set and len(found_paths) < num_paths:
-        current_node = heapq.heappop(open_set)
+        current_f, current_node = heapq.heappop(open_set)
 
         #logger.log(f"Visiting: {current_node}")
         
@@ -111,8 +114,8 @@ def astar(graph, start_node, end_node, date_time, num_paths=5, model = "lstm"):
                 g_score[neighbor] = tentative_g_score
                 f_score[neighbor] = g_score[neighbor] + heuristic_function(current_node, neighbor, date_time, model)
                 
-                if neighbor not in [node for node in open_set]:
-                    heapq.heappush(open_set, neighbor)
+                if neighbor not in [node for _, node in open_set]:
+                    heapq.heappush(open_set, (f_score[neighbor], neighbor))
     
     if not found_paths:
         logger.log("No paths found")
