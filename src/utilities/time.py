@@ -23,6 +23,15 @@ def round_to_nearest_15_minutes(time_str):
     # Return the formatted time
     return time_obj.strftime(f"%H:{rounded_minutes:02d}")
 
+def get_day_of_week(date):
+    # Parse the date string
+    date = datetime.strptime(date, "%d/%m/%Y")
+    return date.strftime("%A")
+
+def get_day_month_and_time(date_time):
+    # Parse the date string
+    date = datetime.strptime(date_time, "%d/%m/%Y %H:%M")
+    return date.strftime("%d/%m %H:%M")
 
 def validate_date_time(date_time):
     formats = [
