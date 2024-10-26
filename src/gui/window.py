@@ -245,9 +245,9 @@ def run_pathfinding(start, end, datetime):
     path_label_str = ""
 
     if len(paths) == 1:
-        path_label_str = f"Pathfinding complete. {len(paths)} path found. \nDate: {get_day_month_and_time(datetime)} - {get_day_of_week(date)}"
+        path_label_str = f"Pathfinding complete. {len(paths)} path found. \nDate: {get_day_of_week(date)} {format_date_to_words(datetime)} \nModel: {selected_model.upper()}"
     else:
-        path_label_str = f"Pathfinding complete. {len(paths)} paths found. \nDate: {get_day_month_and_time(datetime)} - {get_day_of_week(date)}"
+        path_label_str = f"Pathfinding complete. {len(paths)} paths found. \nDate: {get_day_of_week(date)} {format_date_to_words(datetime)} \nModel: {selected_model.upper()}"
     
     if (menu_layout.parent().findChild(QLabel, "path_display") is not None):
         menu_layout.parent().findChild(QLabel, "path_display").setText(path_label_str)

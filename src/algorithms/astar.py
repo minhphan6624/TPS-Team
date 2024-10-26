@@ -20,9 +20,6 @@ def heuristic_function(nodeStart, nodeEnd, date_time, model):
     end_scat = nodeEnd.split("_")[0]
     end_direction = nodeEnd.split("_")[1]
 
-    # Old predict
-    #flow = prediction_module.predict_flow(end_scat, date_time, end_direction, model)
-
     # New predict
     flow = prediction_module.predict_new_model(end_scat, date_time, end_direction, model)
 
