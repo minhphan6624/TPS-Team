@@ -45,13 +45,16 @@ def update_map(html):
     map_widget.setHtml(html, QtCore.QUrl(""))
 
 # Create PIN markers for the SCATs site on the map
-def create_marker(scat, map_obj, color="green", size=30, tooltip=None):
+def create_marker(scat, map_obj, color="green", size=30, tooltip=None, info=None):
     tip = "Scat " + str(scat)
     if tooltip:
         tip = tooltip
 
     html = f"""
-        <h4>Scat Number: {scat}</h4>
+        <div style="font-family: Arial; font-size: 11px; padding: 2px; text-align: center; min-width: 60px;">
+        <b>Scat Number: {scat}</b>
+        <p>{info}</p>
+        </div>
         """
     iframe = folium.IFrame(html=html, width=150, height=100)
     popup = folium.Popup(iframe, max_width=200)
@@ -71,7 +74,7 @@ def create_marker(scat, map_obj, color="green", size=30, tooltip=None):
     ).add_to(map_obj)
 
 # Create circle markers for the SCATs site on the map
-def create_circle_marker(scat, map_obj, color="grey", size=2, tooltip=None):
+def create_circle_marker(scat, map_obj, color="grey", size=2, tooltip=None, info=None):
     tip = str(scat)
     if tooltip:
         tip = tooltip
@@ -79,6 +82,7 @@ def create_circle_marker(scat, map_obj, color="grey", size=2, tooltip=None):
     html = f"""
         <div style="font-family: Arial; font-size: 11px; padding: 2px; text-align: center; min-width: 60px;">
         <b>Scat Number: {scat}</b>
+        <p>{info}</p>
         </div>
         """
     popup = folium.Popup(html, max_width=75)
@@ -218,8 +222,8 @@ def run_pathfinding(start, end, datetime):
 
      # add start and end markers on the map with the displayed scat number
     create_circle_marker(start, map_obj, color="red",
-                         size=3, tooltip=f"Start - {start}")
-    create_marker(end, map_obj, tooltip=f"End - {end}")
+                         size=3, tooltip=f"Start - {start}", info="Start Destination")
+    create_marker(end, map_obj, tooltip=f"End - {end}", info="End Destination")
 
     update_map(map_obj._repr_html_())
     
@@ -289,6 +293,7 @@ def make_menu():
     # Set time to 1st of October 2006 at 1:30AM
     datetime_select.setDateTime(QtCore.QDateTime.currentDateTime())
     datetime_select.setDate(QtCore.QDate(2006, 10, 1))
+    datetime_select.setDisplayFormat("dd/MM/yyyy HH:mm")
     menu_layout.addWidget(datetime_select)
 
     # Dropdown for selecting the model
@@ -311,7 +316,7 @@ def make_menu():
         lambda: run_pathfinding(
             start_scats.text(),
             end_scats.text(),
-            validate_date_time(datetime_select.text()),
+            datetime_select.text(),
         )
     )
     menu_layout.addWidget(run_button)
