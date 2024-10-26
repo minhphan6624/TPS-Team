@@ -51,10 +51,10 @@ def astar(graph, start_node, end_node, date_time, num_paths=5, model = "lstm"):
     g_score = {start_node: 0}
     f_score = {start_node: 0}
     
-    heapq.heappush(open_set, (f_score[start_node], start_node))
+    heapq.heappush(open_set, start_node)
     
     while open_set and len(found_paths) < num_paths:
-        current_f, current_node = heapq.heappop(open_set)
+        current_node = heapq.heappop(open_set)
 
         #logger.log(f"Visiting: {current_node}")
         
@@ -111,11 +111,8 @@ def astar(graph, start_node, end_node, date_time, num_paths=5, model = "lstm"):
                 g_score[neighbor] = tentative_g_score
                 f_score[neighbor] = g_score[neighbor] + heuristic_function(current_node, neighbor, date_time, model)
                 
-                # Add a small random factor to promote path diversity
-                f_score[neighbor] += (random.uniform(0, 0.1) * PATH_COST)
-                
                 if neighbor not in [node for _, node in open_set]:
-                    heapq.heappush(open_set, (f_score[neighbor], neighbor))
+                    heapq.heappush(open_set, neighbor)
     
     if not found_paths:
         logger.log("No paths found")

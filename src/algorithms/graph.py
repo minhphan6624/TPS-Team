@@ -202,6 +202,8 @@ def generate_graph_old():
 
         # Find the closest SCAT based on longitude and latitude
         for _, row in first_loc_df.iterrows():
+
+            # calculate the euclidean distance between the scat and the row
             dist = math.sqrt(
                 (row["NB_LONGITUDE"] - longitude) ** 2
                 + (row["NB_LATITUDE"] - latitude) ** 2

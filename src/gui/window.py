@@ -38,7 +38,6 @@ graph = None
 map_widget = None
 selected_model = "lstm"  # Default model
 
-
 def update_map(html):
     global map_widget
 
