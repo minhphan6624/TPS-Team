@@ -36,7 +36,7 @@ WINDOW_LOCATION = (160, 70)
 # Global variables
 graph = None
 map_widget = None
-selected_model = "saes"  # Default model
+selected_model = "lstm"  # Default model
 
 
 def update_map(html):
@@ -413,7 +413,7 @@ def run():
     )
 
     graph_maker.init()
-    #prediction_module.init()
+    prediction_module.init()
     window.setCentralWidget(make_window())
 
     logger.log("Window created.")
