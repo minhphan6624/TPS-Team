@@ -2,7 +2,7 @@ import sys
 
 sys.dont_write_bytecode = True
 
-from training.data import original_process_test
+from training.data import process_temporal_data_test
 from train import TEST_CSV_DIRECTION, LAG
 
 from sklearn.metrics import (
@@ -18,14 +18,14 @@ from matplotlib.backends.backend_pdf import PdfPages
 
 def test():
     # Load the test data
-    _, X_test, _, y_test, _, _ = original_process_test(TEST_CSV_DIRECTION, LAG)
+    _, X_test, _, y_test, _, _, _ = process_temporal_data_test(TEST_CSV_DIRECTION, LAG)
 
     # Load the trained models
     models = {
-        "lstm": tf.keras.models.load_model("./saved_models/lstm.keras"),
-        "gru": tf.keras.models.load_model("./saved_models/gru.keras"),
-        "saes": tf.keras.models.load_model("./saved_models/saes.keras"),
-        "cnn": tf.keras.models.load_model("./saved_models/cnn.keras"),
+        "lstm": tf.keras.models.load_model("./saved_new_models/lstm.keras"),
+        "gru": tf.keras.models.load_model("./saved_new_models/gru.keras"),
+        "saes": tf.keras.models.load_model("./saved_new_models/saes.keras"),
+        "cnn": tf.keras.models.load_model("./saved_new_models/cnn.keras"),
     }
 
     # Dictionary to store metrics for each model
@@ -54,9 +54,9 @@ def test():
 
             # Plot the predictions against the true values (limit to 200 entries)
             plt.figure(figsize=(10, 6))
-            plt.plot(y_test[:200], label="True Values", color="b")
+            plt.plot(y_test[:20], label="True Values", color="b")
             plt.plot(
-                y_pred[:200],
+                y_pred[:20],
                 label=f"{model_name} Predictions",
                 color="r",
                 linestyle="--",
