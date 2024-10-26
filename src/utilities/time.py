@@ -8,30 +8,40 @@ def round_to_15(minutes):
     return 15 * round(minutes / 15)
 
 
+from datetime import datetime, timedelta
+
+
 def round_to_nearest_15_minutes(time_str):
-    # Convert 12-hour time to 24-hour format
-    time_obj = datetime.strptime(time_str, "%I:%M")
+    formats = ["%H:%M", "%I:%M %p"]  # 24-hour and 12-hour formats
 
-    # Get the rounded minutes
-    rounded_minutes = round_to_15(time_obj.minute)
+    for fmt in formats:
+        try:
+            # Try parsing with the current format
+            time_obj = datetime.strptime(time_str, fmt)
+            break
+        except ValueError:
+            continue
+    else:
+        raise ValueError(f"Unable to parse time string: {time_str}")
 
-    # Adjust for the rounded minutes possibly overflowing into the next hour
-    if rounded_minutes == 60:
-        time_obj += timedelta(hours=1)
-        rounded_minutes = 0
+    # Round the time to the nearest 15 minutes
+    rounded_minute = (time_obj.minute // 15) * 15
+    time_obj = time_obj.replace(minute=rounded_minute, second=0, microsecond=0)
 
-    # Return the formatted time
-    return time_obj.strftime(f"%H:{rounded_minutes:02d}")
+    return time_obj.strftime("%H:%M")
+
 
 def get_day_of_week(date):
     # Parse the date string
     date = datetime.strptime(date, "%d/%m/%Y")
     return date.strftime("%A")
 
+
 def get_day_month_and_time(date_time):
     # Parse the date string
     date = datetime.strptime(date_time, "%d/%m/%Y %H:%M")
     return date.strftime("%d/%m %H:%M")
+
 
 def validate_date_time(date_time):
     formats = [
@@ -42,6 +52,8 @@ def validate_date_time(date_time):
         "%d/%m/%Y %H:%M:%S",  # With seconds
         "%Y-%m-%dT%H:%M:%S",  # ISO format with T separator
         "%d/%m/%y %H:%M",  # Full year format
+        "%m/%d/%y %I:%M %p",  # US format with 2-digit year and AM/PM
+        "%m/%d/%Y %I:%M %p",  # US format with 4-digit year and AM/PM
     ]
 
     for fmt in formats:
