@@ -11,6 +11,8 @@ from PyQt5.QtWidgets import (
     QComboBox
 )
 from PyQt5 import QtWebEngineWidgets, QtCore, QtWidgets
+from PyQt5.QtGui import QIcon
+from PyQt5.QtWidgets import QApplication, QMainWindow, QPushButton, QVBoxLayout, QWidget, QMessageBox
 from folium import plugins, IFrame
 import qdarktheme
 import folium as folium
@@ -29,7 +31,7 @@ import main as main
 from utilities.time import *
 
 # Constants
-WINDOW_TITLE = "TrafficPredictionSystem"
+WINDOW_TITLE = f"Traffic Prediction System - v{main.VERSION} - Developed by Daniel, Jeremy, Nicola & Minh"
 WINDOW_SIZE = (1200, 500)
 WINDOW_LOCATION = (160, 70)
 
@@ -148,8 +150,33 @@ def get_threshold_color(flow):
     elif flow > 250:
         return "red"
 
+def show_info_message(text, title):
+    msg = QMessageBox()
+    msg.setIcon(QMessageBox.Information)
+    msg.setText(text)
+    msg.setWindowTitle(title)
+    msg.setStandardButtons(QMessageBox.Ok)
+    msg.setWindowIcon(QIcon('assets/app_icon.png'))
+    msg.exec_()
+
 def run_pathfinding(start, end, datetime):
     global graph, menu_layout
+
+    startCheck = graph_maker.does_scat_exist(start)
+    endCheck = graph_maker.does_scat_exist(end)
+
+    # Check if start and end scat numbers exist.
+    if startCheck  == False and endCheck == False:
+        show_info_message("Both SCAT numbers do not exist. Please enter a valid SCAT number.", "Invalid SCAT Number")
+        return
+    
+    if startCheck == False:
+        show_info_message(f"Start SCAT number {start} does not exist. Please enter a valid SCAT number.", "Invalid SCAT Number")
+        return
+    
+    if endCheck == False:
+        show_info_message("End SCAT number {end} does not exist. Please enter a valid SCAT number.", "Invalid SCAT Number")
+        return
 
     # clear flow data
     astar.flow_dict = {}
@@ -344,13 +371,6 @@ def make_menu():
     )
     menu_layout.addWidget(run_button)
 
-    # Button to reset the map (doesn't currently work as expected)
-    reset_button = QPushButton("Reset")
-    reset_button.clicked.connect(
-        lambda: update_map(create_map()._repr_html_()))
-    # updates the map but the visual doesn't update
-    menu_layout.addWidget(reset_button)
-
     # Add a stretcher to push buttons to the top
     menu_layout.addStretch()
 
@@ -434,6 +454,8 @@ def run():
     window.setGeometry(
         WINDOW_LOCATION[0], WINDOW_LOCATION[1], WINDOW_SIZE[0], WINDOW_SIZE[1]
     )
+
+    window.setWindowIcon(QIcon('assets/app_icon.png'))
 
     graph_maker.init()
     prediction_module.init()

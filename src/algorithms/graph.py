@@ -254,6 +254,15 @@ def get_all_scats():
 
     return df["SCATS Number"].unique()
 
+def does_scat_exist(scat_number):
+    global df
+
+    if scat_number == '' or scat_number is None:
+        return False
+
+    logger.log(f"Checking if SCAT number {scat_number} exists in the dataset...")
+
+    return int(scat_number) in df["SCATS Number"].values
 
 def get_coords_by_scat(scat_number):
     global df
