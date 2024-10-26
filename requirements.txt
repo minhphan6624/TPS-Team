@@ -5,6 +5,6 @@ folium
 pandas
 numpy
 scikit-learn
-tensorflow-gpu
+tensorflow
 keras
 keras-tcn
