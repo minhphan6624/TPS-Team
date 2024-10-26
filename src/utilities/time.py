@@ -2,15 +2,6 @@ from datetime import datetime, timedelta
 
 from utilities import logger
 
-
-def round_to_15(minutes):
-    # Round the minutes to the nearest 15
-    return 15 * round(minutes / 15)
-
-
-from datetime import datetime, timedelta
-
-
 def round_to_nearest_15_minutes(time_str):
     formats = ["%H:%M", "%I:%M %p"]  # 24-hour and 12-hour formats
 
