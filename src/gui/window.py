@@ -226,9 +226,9 @@ def run_pathfinding(start, end, datetime):
     logger.log(f"Flow Dict -> {astar.flow_dict}")
 
     if len(paths) == 1:
-        path_display = QLabel(f"Pathfinding complete. {len(paths)} path found. \nDate: {datetime} - Day: {get_day_of_week(date)}")
+        path_display = QLabel(f"Pathfinding complete. {len(paths)} path found. \nDate: {get_day_month_and_time(datetime)} - {get_day_of_week(date)}")
     else:
-        path_display = QLabel(f"Pathfinding complete. {len(paths)} paths found. \nDate: {datetime} - Day: {get_day_of_week(date)}")
+        path_display = QLabel(f"Pathfinding complete. {len(paths)} paths found. \nDate: {get_day_month_and_time(datetime)} - {get_day_of_week(date)}")
 
     path_display.setStyleSheet(
         "font-size: 16px; font-weight: bold; color: white; background-color: #333; padding: 5px;"
