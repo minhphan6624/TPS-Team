@@ -164,11 +164,10 @@ def run_pathfinding(start, end, datetime):
                 # Check thresholds for traffic flow, from dict.
                 flow = astar.flow_dict.get(f"{next_node}")
 
-                if flow:
-                    color = get_threshold_color(flow)
-                else:
-                    logger.log(f"Flow data not found for {current}_{next_node}")
-                    color = "red"
+                if not flow:
+                    flow = 0
+
+                color = get_threshold_color(flow)
             else:
                 color = "#A0C8FF"
 
@@ -257,7 +256,9 @@ def make_menu():
 
     # Date and time input box
     datetime_select = QtWidgets.QDateTimeEdit()
-    datetime_select.setDateTime(QtCore.QDateTime.currentDateTime())
+
+    # Set time to 1st of October 2006 at 1:30AM
+    datetime_select.setDateTime(QtCore.QDateTime(QtCore.QDate(2006, 10, 1), QtCore.QTime(1, 30)))
     menu_layout.addWidget(datetime_select)
 
     # Dropdown for selecting the model

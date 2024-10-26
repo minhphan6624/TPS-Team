@@ -234,7 +234,8 @@ def predict_new_model(scats_num, date_time, direction, model_type="lstm"):
         recent_flows = df[mask].tail(4)['Lane 1 Flow (Veh/15 Minutes)'].values
         
         if len(recent_flows) < 4:
-            raise ValueError(f"Not enough historical data. Need 4 previous timestamps.")
+            print(f"Not enough historical data for {scats_num} {direction} at {date_time}")
+            return 0
         
         # Scale the historical flows
         scaled_flows = flow_scaler.transform(recent_flows.reshape(-1, 1)).reshape(-1)
@@ -253,10 +254,10 @@ def predict_new_model(scats_num, date_time, direction, model_type="lstm"):
             X_pred = X_pred.reshape(1, -1)
 
         # Make prediction
-        predicted = model.predict(X_pred, verbose=0)
+        predicted = model.predict(X_pred, verbose=1)
         predicted_flow = flow_scaler.inverse_transform(predicted.reshape(-1, 1))[0][0]
 
-        print(f"\n\n[{model_type}] Predicted traffic flow for scats {scats_num} at {date_time} in direction {direction}: {predicted_flow:.2f} vehicles per 15 minutes\n\n")
+        print(f"[{model_type}] Predicted traffic flow for scats {scats_num} at {date_time} in direction {direction}: {predicted_flow:.2f} vehicles per 15 minutes")
         return predicted_flow
 
     except Exception as e:
