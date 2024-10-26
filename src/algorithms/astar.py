@@ -89,11 +89,16 @@ def astar(graph, start_node, end_node, date_time, num_paths=5, model = "lstm"):
                 
                 overall_time += heuristic_dict[f"{start}_{end}"]["distance"] / heuristic_dict[f"{start}_{end}"]["speed"]
             
-            found_paths.append({
-                'path': path,
-                'distance': round(overall_distance, 2),
-                'time': round(overall_time * 60, 2)
-            })
+            if path in [path_info['path'] for path_info in found_paths]:
+                logger.log("Path already found - skipping")
+                continue
+            else:
+                logger.log("Path unique - adding to list")
+                found_paths.append({
+                    'path': path,
+                    'distance': round(overall_distance, 2),
+                    'time': round(overall_time * 60, 2)
+                })
             
             # Don't stop here - continue searching for alternative paths
             closed_set.add(current_node)
@@ -106,12 +111,12 @@ def astar(graph, start_node, end_node, date_time, num_paths=5, model = "lstm"):
             if neighbor in closed_set:
                 continue
                 
-            tentative_g_score = g_score[current_node] + PATH_COST
+            tentative_g_score = g_score[current_node] 
             
             if neighbor not in g_score or tentative_g_score < g_score[neighbor]:
                 # Store the parent relationship
                 parent[neighbor] = current_node
-                g_score[neighbor] = tentative_g_score
+                g_score[neighbor] = current_f + PATH_COST
                 f_score[neighbor] = g_score[neighbor] + heuristic_function(current_node, neighbor, date_time, model)
                 
                 if neighbor not in [node for _, node in open_set]:
