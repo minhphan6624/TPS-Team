@@ -225,9 +225,11 @@ def run_pathfinding(start, end, datetime):
     
     logger.log(f"Flow Dict -> {astar.flow_dict}")
 
+    if len(paths) == 1:
+        path_display = QLabel(f"Pathfinding complete. {len(paths)} path found. \nDate: {datetime} - Day: {get_day_of_week(date)}")
+    else:
+        path_display = QLabel(f"Pathfinding complete. {len(paths)} paths found. \nDate: {datetime} - Day: {get_day_of_week(date)}")
 
-    # should display the time as well
-    path_display = QLabel(f"Pathfinding complete. {len(paths)} paths found.")
     path_display.setStyleSheet(
         "font-size: 16px; font-weight: bold; color: white; background-color: #333; padding: 5px;"
     )
@@ -309,7 +311,7 @@ def make_menu():
         lambda: run_pathfinding(
             start_scats.text(),
             end_scats.text(),
-            datetime_select.text(),
+            validate_date_time(datetime_select.text()),
         )
     )
     menu_layout.addWidget(run_button)
@@ -397,7 +399,7 @@ def run():
     global app, graph
 
     app = QApplication(sys.argv)
-    # qdarktheme.setup_theme("dark")
+    qdarktheme.setup_theme("dark")
 
     window = QMainWindow()
     window.setWindowTitle(WINDOW_TITLE)
