@@ -106,7 +106,6 @@ def create_circle_marker(scat, map_obj, color="grey", size=2, tooltip=None, star
         color=color,
         fill=True,
         fill_color=color,
-        fill_opacity=0.6,
         popup=popup,
         tooltip=tip,
     ).add_to(map_obj)
@@ -117,7 +116,7 @@ def create_popup(index, time, distance):
         other = " - Fastest Path"
 
     html = f"""
-     <div style="font-family: Arial; font-size: 10px; width: 150px;">
+     <div style="font-family: Arial; font-size: 10px; width: 110px;">
         <div style="padding: 4px; border-bottom: 1px solid #dee2e6;">
             <b>Path {index+1} {other}</b>
         </div>
@@ -133,7 +132,7 @@ def create_popup(index, time, distance):
         </table>
     </div>
     """
-    popup = folium.Popup(html, max_width=160)
+    popup = folium.Popup(html, max_width=130)
 
     return popup
 
@@ -234,7 +233,7 @@ def run_pathfinding(start, end, datetime):
         display_index -= 1
 
      # add start and end markers on the map with the displayed scat number
-    create_circle_marker(start, map_obj, color="red",
+    create_circle_marker(start, map_obj, color="lightgreen",
                          size=3, tooltip=f"Start - {start}", start=True)
     create_marker(end, map_obj, tooltip=f"End - {end}", end=True)
 
