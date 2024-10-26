@@ -45,19 +45,26 @@ def update_map(html):
     map_widget.setHtml(html, QtCore.QUrl(""))
 
 # Create PIN markers for the SCATs site on the map
-def create_marker(scat, map_obj, color="green", size=30, tooltip=None, info=None):
-    tip = "Scat " + str(scat)
+def create_marker(scat, map_obj, color="green", size=30, tooltip=None, end=False):
+    tip = str(scat)
     if tooltip:
         tip = tooltip
 
     html = f"""
         <div style="font-family: Arial; font-size: 11px; padding: 2px; text-align: center; min-width: 60px;">
         <b>Scat Number: {scat}</b>
-        <p>{info}</p>
         </div>
         """
-    iframe = folium.IFrame(html=html, width=150, height=100)
-    popup = folium.Popup(iframe, max_width=200)
+    
+    if end:
+        tip = "End: " + tip
+        html = f"""
+        <div style="font-family: Arial; font-size: 11px; padding: 2px; text-align: center; min-width: 60px;">
+        <b>End Scat: {scat}</b>
+        </div>
+        """
+
+    popup = folium.Popup(html, max_width=200)
 
     custom_icon = folium.CustomIcon(
         icon_image="assets/pin.png",
@@ -74,17 +81,24 @@ def create_marker(scat, map_obj, color="green", size=30, tooltip=None, info=None
     ).add_to(map_obj)
 
 # Create circle markers for the SCATs site on the map
-def create_circle_marker(scat, map_obj, color="grey", size=2, tooltip=None, info=None):
+def create_circle_marker(scat, map_obj, color="grey", size=2, tooltip=None, start=False):
     tip = str(scat)
     if tooltip:
         tip = tooltip
-
+    
     html = f"""
         <div style="font-family: Arial; font-size: 11px; padding: 2px; text-align: center; min-width: 60px;">
         <b>Scat Number: {scat}</b>
-        <p>{info}</p>
         </div>
         """
+    if start:
+        tip = "Start: " + tip
+        html = f"""
+        <div style="font-family: Arial; font-size: 11px; padding: 2px; text-align: center; min-width: 60px;">
+        <b>Start Scat: {scat}</b>
+        </div>
+        """
+
     popup = folium.Popup(html, max_width=75)
 
     folium.CircleMarker(
@@ -222,23 +236,29 @@ def run_pathfinding(start, end, datetime):
 
      # add start and end markers on the map with the displayed scat number
     create_circle_marker(start, map_obj, color="red",
-                         size=3, tooltip=f"Start - {start}", info="Start Destination")
-    create_marker(end, map_obj, tooltip=f"End - {end}", info="End Destination")
+                         size=3, tooltip=f"Start - {start}", start=True)
+    create_marker(end, map_obj, tooltip=f"End - {end}", end=True)
 
     update_map(map_obj._repr_html_())
     
     logger.log(f"Flow Dict -> {astar.flow_dict}")
+    path_label_str = ""
 
     if len(paths) == 1:
-        path_display = QLabel(f"Pathfinding complete. {len(paths)} path found. \nDate: {get_day_month_and_time(datetime)} - {get_day_of_week(date)}")
+        path_label_str = f"Pathfinding complete. {len(paths)} path found. \nDate: {get_day_month_and_time(datetime)} - {get_day_of_week(date)}"
     else:
-        path_display = QLabel(f"Pathfinding complete. {len(paths)} paths found. \nDate: {get_day_month_and_time(datetime)} - {get_day_of_week(date)}")
-
-    path_display.setStyleSheet(
-        "font-size: 16px; font-weight: bold; color: white; background-color: #333; padding: 5px;"
-    )
-    path_display.setAlignment(QtCore.Qt.AlignCenter)
-    menu_layout.addWidget(path_display)
+        path_label_str = f"Pathfinding complete. {len(paths)} paths found. \nDate: {get_day_month_and_time(datetime)} - {get_day_of_week(date)}"
+    
+    if (menu_layout.parent().findChild(QLabel, "path_display") is not None):
+        menu_layout.parent().findChild(QLabel, "path_display").setText(path_label_str)
+    else:
+        path_display = QLabel(path_label_str)
+        path_display.setStyleSheet(
+            "font-size: 16px; font-weight: bold; color: white; background-color: #333; padding: 5px;"
+        )
+        path_display.setAlignment(QtCore.Qt.AlignCenter)
+        path_display.setObjectName("path_display")
+        menu_layout.addWidget(path_display)
 
     path_str = ""
     for index, path in enumerate(paths):
@@ -248,14 +268,19 @@ def run_pathfinding(start, end, datetime):
             time = f"{round(path['time'] * 60, 2)} seconds"
         path_str += f"Path {index + 1}: {node_string} \nTime: {time} \nDistance: {path['distance']} km \n \n"
 
-    path_text = QPlainTextEdit()
-    path_text.setPlainText(path_str)
-    path_text.setReadOnly(True)
-    path_text.setStyleSheet(
-        "font-size: 12px; color: white; background-color: #333; padding: 5px;"
-    )
-    # this will add a text box with the path information everytime you run the pathfinding algorithm
-    menu_layout.addWidget(path_text)
+    if (menu_layout.parent().findChild(QPlainTextEdit, "path_text") is not None):
+        menu_layout.parent().findChild(QPlainTextEdit, "path_text").setPlainText(path_str)
+    else:
+        path_text = QPlainTextEdit()
+        path_text.setObjectName("path_text")
+        path_text.setPlainText(path_str)
+        path_text.setReadOnly(True)
+        path_text.setStyleSheet(
+            "font-size: 12px; color: white; background-color: #333; padding: 5px;"
+        )
+        # this will add a text box with the path information everytime you run the pathfinding algorithm
+        menu_layout.addWidget(path_text)
+   
 
 
 # Create the menu widget for the GUI
