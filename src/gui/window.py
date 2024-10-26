@@ -72,15 +72,16 @@ def create_marker(scat, map_obj, color="green", size=30, tooltip=None):
 
 # Create circle markers for the SCATs site on the map
 def create_circle_marker(scat, map_obj, color="grey", size=2, tooltip=None):
-    tip = "Scat " + str(scat)
+    tip = str(scat)
     if tooltip:
         tip = tooltip
 
     html = f"""
-        <h4>Scat Number: {scat}</h4>
+        <div style="font-family: Arial; font-size: 11px; padding: 2px; text-align: center; min-width: 60px;">
+        <b>Scat Number: {scat}</b>
+        </div>
         """
-    iframe = folium.IFrame(html=html, width=150, height=100)
-    popup = folium.Popup(iframe, max_width=200)
+    popup = folium.Popup(html, max_width=75)
 
     folium.CircleMarker(
         graph_maker.get_coords_by_scat(int(scat)),
@@ -92,6 +93,32 @@ def create_circle_marker(scat, map_obj, color="grey", size=2, tooltip=None):
         popup=popup,
         tooltip=tip,
     ).add_to(map_obj)
+
+def create_popup(index, time, distance):
+    other = ""
+    if index == 0:
+        other = " - Fastest Path"
+
+    html = f"""
+     <div style="font-family: Arial; font-size: 10px; width: 150px;">
+        <div style="padding: 4px; border-bottom: 1px solid #dee2e6;">
+            <b>Path {index+1} {other}</b>
+        </div>
+        <table style="width: 100%; border-collapse: collapse; margin-top: 4px;">
+            <tr style="background-color: #ffffff;">
+                <td style="padding: 2px;"><b>Time:</b></td>
+                <td style="padding: 2px;">{time} mins</td>
+            </tr>
+            <tr style="background-color: #ffffff;">
+                <td style="padding: 2px;"><b>Distance:</b></td>
+                <td style="padding: 2px;">{distance:.2f} km</td>
+            </tr>
+        </table>
+    </div>
+    """
+    popup = folium.Popup(html, max_width=160)
+
+    return popup
 
 # Function to run the pathfinding algorithm
 
@@ -180,8 +207,8 @@ def run_pathfinding(start, end, datetime):
                 color=color,
                 weight=2.5 if path_index == 0 else 2.0,
                 opacity=1.0 if path_index == 0 else 0.8,
-                popup=f'Path {display_index + 1}',
-                tooltip=f'Path {display_index + 1} - Segment: {current} → {next_node}'
+                popup=create_popup(display_index, path_info['time'], path_info['distance']),
+                tooltip=f'Path {display_index + 1} - Segment: {current} → {next_node}', 
             ).add_to(map_obj)
 
         # Add a summary for this path
@@ -209,11 +236,11 @@ def run_pathfinding(start, end, datetime):
 
     path_str = ""
     for index, path in enumerate(paths):
-        node_string = " -> ".join([str(node) for node in path['path']])
+        node_string = " → ".join([str(node) for node in path['path']])
         time = f"{path['time']} minutes"
         if (path['time'] < 1):
             time = f"{round(path['time'] * 60, 2)} seconds"
-        path_str += f"Path {index + 1}: {node_string} \n {time} - {path['distance']} km \n \n"
+        path_str += f"Path {index + 1}: {node_string} \nTime: {time} \nDistance: {path['distance']} km \n \n"
 
     path_text = QPlainTextEdit()
     path_text.setPlainText(path_str)
@@ -258,7 +285,8 @@ def make_menu():
     datetime_select = QtWidgets.QDateTimeEdit()
 
     # Set time to 1st of October 2006 at 1:30AM
-    datetime_select.setDateTime(QtCore.QDateTime(QtCore.QDate(2006, 10, 1), QtCore.QTime(1, 30)))
+    datetime_select.setDateTime(QtCore.QDateTime.currentDateTime())
+    datetime_select.setDate(QtCore.QDate(2006, 10, 1))
     menu_layout.addWidget(datetime_select)
 
     # Dropdown for selecting the model
@@ -269,7 +297,7 @@ def make_menu():
     model_dropdown.addItem("LSTM")
     model_dropdown.addItem("GRU")
 
-    model_dropdown.setCurrentText("SAEs")  # Set default selection
+    model_dropdown.setCurrentText("LSTM")  # Set default selection
     # model_dropdown.currentIndexChanged.connect(update_selected_model)
     model_dropdown.currentTextChanged.connect(
         lambda text: update_selected_model(text))

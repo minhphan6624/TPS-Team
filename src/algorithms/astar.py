@@ -44,7 +44,7 @@ def parse_node(node_str):
     return int(node_str.split("_")[0])
 
 
-def astar(graph, start_node, end_node, date_time, num_paths=5, model = "saes"):
+def astar(graph, start_node, end_node, date_time, num_paths=5, model = "lstm"):
     open_set = []
     closed_set = set()
     found_paths = []
