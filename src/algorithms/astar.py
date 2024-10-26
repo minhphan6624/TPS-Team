@@ -111,7 +111,7 @@ def astar(graph, start_node, end_node, date_time, num_paths=5, model = "lstm"):
                 g_score[neighbor] = tentative_g_score
                 f_score[neighbor] = g_score[neighbor] + heuristic_function(current_node, neighbor, date_time, model)
                 
-                if neighbor not in [node for _, node in open_set]:
+                if neighbor not in [node for node in open_set]:
                     heapq.heappush(open_set, neighbor)
     
     if not found_paths:
