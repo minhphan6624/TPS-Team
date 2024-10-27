@@ -214,7 +214,6 @@ def main(argv):
     parser.add_argument(
         "--one_model",
         help="Train just one scat model",
-        default=["2000_lstm"],
     )
 
     args = parser.parse_args()
