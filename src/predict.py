@@ -211,6 +211,9 @@ def main():
 
     predict_individual_model(scats_num, date_time, direction, "lstm")
     predict_individual_model(scats_num, date_time, direction, "gru")
+    
+    NEW_MODEL_DIR = "./saved_test_models"
+
     predict_individual_model(scats_num, date_time, direction, "cnn")
 
     #predict_new_model(scats_num,date_time,direction, "saes")

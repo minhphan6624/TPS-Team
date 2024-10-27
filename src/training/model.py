@@ -100,7 +100,7 @@ def get_saes(layers, dropout_rate=0.3):
     
     return [sae1, sae2, sae3, saes]
 
-def get_cnn(units):
+def old_get_cnn(units):
     model = Sequential()
     model.add(Conv1D(
         filters=64,
@@ -114,5 +114,26 @@ def get_cnn(units):
     model.add(MaxPooling1D(pool_size=2))
     model.add(Flatten())
     model.add(Dense(units[1], activation='relu'))
+    model.add(Dense(units[2], activation='sigmoid'))
+    return model
+
+def get_cnn(units):
+    model = Sequential()
+    # First Conv Block
+    model.add(Conv1D(filters=128, kernel_size=5, padding='same', input_shape=(units[0], 14)))
+    model.add(BatchNormalization())
+    model.add(Activation('relu'))
+    model.add(MaxPooling1D(pool_size=2))
+    model.add(Dropout(0.3))
+    # Second Conv Block
+    model.add(Conv1D(filters=256, kernel_size=3, padding='same'))
+    model.add(BatchNormalization())
+    model.add(Activation('relu'))
+    model.add(MaxPooling1D(pool_size=2))
+    model.add(Dropout(0.3))
+    # Flatten and Dense Layers
+    model.add(Flatten())
+    model.add(Dense(units[1], activation='relu'))
+    model.add(Dropout(0.3))
     model.add(Dense(units[2], activation='sigmoid'))
     return model
