@@ -26,6 +26,7 @@ CSV_DIR = "../training_data/new_traffic_flows"
 # key value (scats_num) -> model instance
 all_models = {}
 
+
 def init():
     count = 0
 
@@ -33,40 +34,53 @@ def init():
     for model_name in os.listdir(NEW_MODEL_DIR):
         file_split = model_name.split(".")
 
-        file_name = file_split[0]
-        file_ext = file_split[1]
+        # Ensure the file extension is '.keras'
+        if len(file_split) < 2 or file_split[1] != "keras":
+            continue  # Skip non-model files
 
-        if file_ext != "keras":
-            continue
-
-        count += 1
-
-        # Load Model
-        scats_split = model_name.split("_")
+        # Ensure the filename contains the expected '_'
+        scats_split = file_split[0].split("_")
+        if len(scats_split) < 2:
+            print(f"Skipping invalid model name: {model_name}")
+            continue  # Skip if model name is not in the correct format
 
         scats_num = scats_split[0]
-        model_type = scats_split[1].replace(".keras", "")
+        model_type = scats_split[1]
 
         model_path = f"{NEW_MODEL_DIR}/{model_name}"
         model = load_model(model_path)
 
         # Load Traffic Flow CSV
         csv_path = f"{CSV_DIR}/{scats_num}_trafficflow.csv"
+        if not os.path.exists(csv_path):
+            print(f"Skipping missing traffic flow CSV for SCATS: {scats_num}")
+            continue
+
         df = pd.read_csv(csv_path, encoding="utf-8").fillna(0)
 
         # Load Scalers
         scaler_path = f"{NEW_MODEL_DIR}/{scats_num}_{model_type}_scalers.npz"
+        if not os.path.exists(scaler_path):
+            print(
+                f"Skipping missing scalers for SCATS: {scats_num}, Model Type: {model_type}"
+            )
+            continue
+
         saved_data = np.load(scaler_path, allow_pickle=True)
 
-        all_models[file_name] = {
+        all_models[file_split[0]] = {
             "model": model,
             "flow_csv": df,
-            "scaler": saved_data
+            "scaler": saved_data,
         }
 
-        logger.log(f"[{count} of 160] Loaded model, scalers and flow for {model_type} -> {scats_num}")
+        logger.log(
+            f"[{count} of 160] Loaded model, scalers and flow for {model_type} -> {scats_num}"
+        )
+        count += 1
 
     print("All models loaded successfully, list size -> ", len(all_models))
+
 
 def plot_results(y_true, y_pred):
     d = "2016-10-1 00:00"
@@ -89,59 +103,68 @@ def plot_results(y_true, y_pred):
 
     plt.show()
 
+
 def predict_new_model(scats_num, date_time, direction, model_type="lstm"):
     try:
         # Load the model data
         model_data = all_models[scats_num + "_" + model_type]
 
         if model_data is None:
-            raise FileNotFoundError(f"Model not found for scats {scats_num} and type {model_type}")
+            raise FileNotFoundError(
+                f"Model not found for scats {scats_num} and type {model_type}"
+            )
 
         model = model_data["model"]
         df = model_data["flow_csv"]
         saved_data = model_data["scaler"]
 
         # Load the saved data
-        flow_scaler = saved_data['flow_scaler'].item()
-        temporal_scaler = saved_data['temporal_scaler'].item()
-        direction_encoder = saved_data['direction_encoder'].item()
+        flow_scaler = saved_data["flow_scaler"].item()
+        temporal_scaler = saved_data["temporal_scaler"].item()
+        direction_encoder = saved_data["direction_encoder"].item()
 
         # Convert input datetime string to datetime object
-        target_datetime = pd.to_datetime(date_time, format='%d/%m/%Y %H:%M')
-        
+        target_datetime = pd.to_datetime(date_time, format="%d/%m/%Y %H:%M")
+
         # Extract temporal features for target datetime
-        temporal_features = np.array([[
-            target_datetime.hour,
-            target_datetime.minute,
-            target_datetime.dayofweek,
-            target_datetime.day,
-            target_datetime.month
-        ]])
-        
+        temporal_features = np.array(
+            [
+                [
+                    target_datetime.hour,
+                    target_datetime.minute,
+                    target_datetime.dayofweek,
+                    target_datetime.day,
+                    target_datetime.month,
+                ]
+            ]
+        )
+
         # Scale temporal features
         scaled_temporal = temporal_scaler.transform(temporal_features)
-        
+
         # Encode direction
         direction_encoded = direction_encoder.transform([[direction]])
-        
+
         # Process historical data
-        df['datetime'] = pd.to_datetime(df['15 Minutes'], dayfirst=True)
-        df = df.sort_values('datetime')
-        
+        df["datetime"] = pd.to_datetime(df["15 Minutes"], dayfirst=True)
+        df = df.sort_values("datetime")
+
         # Find the last 4 flow values before target_datetime
-        mask = df['datetime'] < target_datetime
-        recent_flows = df[mask].tail(4)['Lane 1 Flow (Veh/15 Minutes)'].values
-        
+        mask = df["datetime"] < target_datetime
+        recent_flows = df[mask].tail(4)["Lane 1 Flow (Veh/15 Minutes)"].values
+
         if len(recent_flows) < 4:
-            print(f"Not enough historical data for {scats_num} {direction} at {date_time}")
+            print(
+                f"Not enough historical data for {scats_num} {direction} at {date_time}"
+            )
             return 0
-        
+
         # Scale the historical flows
         scaled_flows = flow_scaler.transform(recent_flows.reshape(-1, 1)).reshape(-1)
-        
+
         # Create the input sequence
         X_pred = np.zeros((1, 4, 14))  # 14 features
-        
+
         # Fill in historical values and features
         for i in range(4):
             X_pred[0, i, 0] = scaled_flows[i]  # Flow
@@ -156,7 +179,9 @@ def predict_new_model(scats_num, date_time, direction, model_type="lstm"):
         predicted = model.predict(X_pred, verbose=0)
         predicted_flow = flow_scaler.inverse_transform(predicted.reshape(-1, 1))[0][0]
 
-        print(f"[{model_type}] Predicted traffic flow for scats {scats_num} at {date_time} in direction {direction}: {predicted_flow:.2f} vehicles per 15 minutes")
+        print(
+            f"[{model_type}] Predicted traffic flow for scats {scats_num} at {date_time} in direction {direction}: {predicted_flow:.2f} vehicles per 15 minutes"
+        )
         return predicted_flow
 
     except Exception as e:
@@ -170,18 +195,17 @@ def main():
     direction = "W"
     scats_num = "2000"
 
-    predict_new_model(scats_num,date_time,direction, "saes")
-    predict_new_model(scats_num,date_time,direction, "lstm")
-    predict_new_model(scats_num,date_time,direction, "gru")
-    predict_new_model(scats_num,date_time,direction, "cnn")
+    predict_new_model(scats_num, date_time, direction, "saes")
+    predict_new_model(scats_num, date_time, direction, "lstm")
+    predict_new_model(scats_num, date_time, direction, "gru")
+    predict_new_model(scats_num, date_time, direction, "cnn")
 
-
-    '''
+    """
     # Load Keras models and predict traffic flow including directions
     for model_name in MODELS:
         model_path = f"./saved_models/{model_name}.keras"
         print(model_path)
-        cpredict(model_path, TEST_CSV_DIRECTION)'''
+        cpredict(model_path, TEST_CSV_DIRECTION)"""
 
 
 def cpredict(model_path, data_path):

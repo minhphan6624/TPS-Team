@@ -1,4 +1,5 @@
 import sys
+
 sys.dont_write_bytecode = True
 
 import os
@@ -34,12 +35,13 @@ MODELS = {
     "cnn": get_cnn([LAG, 128, 1]),
 }
 
+
 class ModelTrainer:
     def __init__(self):
         self.flow_scaler = None
         self.temporal_scaler = None
         self.direction_encoder = None
-    
+
     def get_early_stopping_callback(self):
         return EarlyStopping(
             monitor="loss",
@@ -76,14 +78,14 @@ class ModelTrainer:
 
         # Save the model
         model.save(model_path)
-        
+
         # Save the scalers and encoder
         if self.flow_scaler is not None:
             np.savez(
                 scaler_path,
                 flow_scaler=self.flow_scaler,
                 temporal_scaler=self.temporal_scaler,
-                direction_encoder=self.direction_encoder
+                direction_encoder=self.direction_encoder,
             )
 
     def train_saes(self, models, X_train, y_train, name, config, print_loss):
@@ -96,7 +98,9 @@ class ModelTrainer:
                 prev_model = models[i - 1]
                 input_tensor = prev_model.layers[0].input
                 hidden_layer_output = prev_model.get_layer("hidden").output
-                hidden_layer_model = Model(inputs=input_tensor, outputs=hidden_layer_output)
+                hidden_layer_model = Model(
+                    inputs=input_tensor, outputs=hidden_layer_output
+                )
                 temp = hidden_layer_model.predict(temp)
 
             m = models[i]
@@ -123,13 +127,21 @@ class ModelTrainer:
 
         # Read the CSV file
         df = pd.read_csv(csv, encoding="utf-8").fillna(0)
-        
+
         # Process data including temporal features
-        X_train, y_train, self.flow_scaler, self.temporal_scaler, self.direction_encoder = process_temporal_data(df, LAG)
+        (
+            X_train,
+            y_train,
+            self.flow_scaler,
+            self.temporal_scaler,
+            self.direction_encoder,
+        ) = process_temporal_data(df, LAG)
 
         # For non-SAES models, reshape to (samples, timesteps, features)
         num_features = X_train.shape[2]  # Should be 14
-        X_train_reshaped = np.reshape(X_train, (X_train.shape[0], X_train.shape[1], num_features))
+        X_train_reshaped = np.reshape(
+            X_train, (X_train.shape[0], X_train.shape[1], num_features)
+        )
 
         # For SAES, flatten the features
         X_train_saes = np.reshape(X_train, (X_train.shape[0], -1))
@@ -140,11 +152,21 @@ class ModelTrainer:
 
             if model_type == "saes":
                 self.train_saes(
-                    model_instance, X_train_saes, y_train, model_name, config, print_loss
+                    model_instance,
+                    X_train_saes,
+                    y_train,
+                    model_name,
+                    config,
+                    print_loss,
                 )
             else:
                 self.train_model(
-                    model_instance, X_train_reshaped, y_train, model_name, config, print_loss
+                    model_instance,
+                    X_train_reshaped,
+                    y_train,
+                    model_name,
+                    config,
+                    print_loss,
                 )
 
     def train_scats(self, model_types):
@@ -159,8 +181,20 @@ class ModelTrainer:
                     "{0}_",
                     scats_number,
                 )
-                print(model_types)
-                self.train_models(model_types, model_prefix, path, False)
+
+                # Check if model file already exists
+                for model_type in model_types:
+                    model_file = f"{model_prefix}{model_type}.keras"  # Assuming the model is saved in .h5 format
+                    model_path = Path(MODEL_DIR) / model_file
+
+                    if model_path.exists():
+                        print(
+                            f"Model for {model_type} already exists: {model_file}. Skipping training."
+                        )
+                    else:
+                        print(f"Training model for {model_type}: {model_file}")
+                        self.train_models([model_type], model_prefix, path, False)
+
 
 def main(argv):
     parser = argparse.ArgumentParser()
@@ -171,15 +205,9 @@ def main(argv):
         default=["lstm"],
     )
     parser.add_argument(
-        "--scats",
-        help="Check if --scats is present",
-        action="store_true"
+        "--scats", help="Check if --scats is present", action="store_true"
     )
-    parser.add_argument(
-        "--loss",
-        help="Save loss history",
-        action="store_true"
-    )
+    parser.add_argument("--loss", help="Save loss history", action="store_true")
 
     args = parser.parse_args()
     trainer = ModelTrainer()
@@ -188,6 +216,7 @@ def main(argv):
         trainer.train_scats(args.model)
     else:
         trainer.train_models(args.model, None, TEST_CSV_DIRECTION, args.loss)
+
 
 if __name__ == "__main__":
     main(sys.argv)
