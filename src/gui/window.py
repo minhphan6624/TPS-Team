@@ -58,7 +58,6 @@ def create_marker(scat, map_obj, color="green", size=30, tooltip=None, end=False
         """
     
     if end:
-        tip = "End: " + tip
         html = f"""
         <div style="font-family: Arial; font-size: 11px; padding: 2px; text-align: center; min-width: 60px;">
         <b>End Scat: {scat}</b>
@@ -93,7 +92,6 @@ def create_circle_marker(scat, map_obj, color="grey", size=2, tooltip=None, star
         </div>
         """
     if start:
-        tip = "Start: " + tip
         html = f"""
         <div style="font-family: Arial; font-size: 11px; padding: 2px; text-align: center; min-width: 60px;">
         <b>Start Scat: {scat}</b>
@@ -159,7 +157,7 @@ def show_info_message(text, title):
     msg.setWindowIcon(QIcon('assets/app_icon.png'))
     msg.exec_()
 
-def run_pathfinding(start, end, datetime):
+def run_pathfinding(start, end, date_time):
     global graph, menu_layout
 
     startCheck = graph_maker.does_scat_exist(start)
@@ -194,8 +192,8 @@ def run_pathfinding(start, end, datetime):
     logger.log(f"Using start and end node [{start}, {end}]")
 
     # format datetime
-    datetime_split = datetime.split(" ")
-    date = datetime_split[0]
+    datetime_split = date_time.split(" ")
+    date = format_date_universal(datetime_split[0])
     time = round_to_nearest_15_minutes(datetime_split[1])
     formatted_datetime = f"{date} {time}"
 
@@ -270,9 +268,9 @@ def run_pathfinding(start, end, datetime):
     path_label_str = ""
 
     if len(paths) == 1:
-        path_label_str = f"Pathfinding complete. {len(paths)} path found. \nDate: {get_day_of_week(date)} {format_date_to_words(datetime)} \nModel: {selected_model.upper()}"
+        path_label_str = f"Pathfinding complete. {len(paths)} path found. \nDate: {get_day_of_week(date)} {format_date_to_words(date_time)} \nModel: {selected_model.upper()}"
     else:
-        path_label_str = f"Pathfinding complete. {len(paths)} paths found. \nDate: {get_day_of_week(date)} {format_date_to_words(datetime)} \nModel: {selected_model.upper()}"
+        path_label_str = f"Pathfinding complete. {len(paths)} paths found. \nDate: {get_day_of_week(date)} {format_date_to_words(date_time)} \nModel: {selected_model.upper()}"
     
     if (menu_layout.parent().findChild(QLabel, "path_display") is not None):
         menu_layout.parent().findChild(QLabel, "path_display").setText(path_label_str)
