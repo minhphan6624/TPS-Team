@@ -3,7 +3,6 @@ import sys
 sys.dont_write_bytecode = True
 
 from datetime import datetime, timedelta
-import os
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -12,69 +11,77 @@ from utilities import logger
 from predict import (
     predict_new_model,
     init,
-)  # Assuming predict_new_model is in predict_traffic_flow.py
-
-# Initialize the model directory and CSV directory
-MODEL_DIR = "./saved_models"
-NEW_MODEL_DIR = "./saved_new_models"
-CSV_DIR = "../training_data/new_traffic_flows"
+)
+from matplotlib.backends.backend_pdf import (
+    PdfPages,
+)  # Import PdfPages to save plots in PDF
 
 
-def predict_for_date_range(scats_num, direction, model_type, start_date, end_date):
-    """Predict traffic flow for each day from start_date to end_date, for each hour."""
-    current_date = start_date
+def predict_for_day(scats_num, direction, model_type, specific_date):
+    """Predict traffic flow for two different times in a specific day (00:00 and 12:00)."""
     results = []
+    hours = [0, 12]  # Predictions for 00:00 and 12:00 (every 12 hours)
 
-    while current_date <= end_date:
-        for hour in range(24):  # Iterate through all 24 hours in a day
-            date_time = (
-                current_date.strftime("%d/%m/%Y") + f" {hour:02d}:00"
-            )  # Format date as 'dd/mm/yyyy HH:00'
-            prediction = predict_new_model(scats_num, date_time, direction, model_type)
-            results.append(
-                {
-                    "date": current_date.strftime("%Y-%m-%d"),
-                    "hour": hour,
-                    "prediction": prediction,
-                }
-            )
-
-        current_date += timedelta(days=1)  # Move to the next day
+    for hour in hours:
+        date_time = (
+            specific_date.strftime("%d/%m/%Y") + f" {hour:02d}:00"
+        )  # Format: dd/mm/yyyy HH:00
+        prediction = predict_new_model(scats_num, date_time, direction, model_type)
+        results.append(
+            {
+                "date": specific_date.strftime("%Y-%m-%d"),
+                "hour": hour,
+                "prediction": prediction,
+            }
+        )
 
     return results
 
 
-def plot_comparison(oct_predictions, nov_predictions):
-    """Plot the predictions for October vs November."""
-    # Convert predictions to DataFrame for easy plotting
-    df_oct = pd.DataFrame(oct_predictions)
-    df_nov = pd.DataFrame(nov_predictions)
+def predict_for_month(scats_num, direction, model_type, start_date, end_date):
+    """Predict traffic flow for the entire month by iterating through each day."""
+    current_date = start_date
+    monthly_predictions = []
 
-    plt.figure(figsize=(12, 6))
+    while current_date <= end_date:
+        daily_predictions = predict_for_day(
+            scats_num, direction, model_type, current_date
+        )
+        monthly_predictions.extend(
+            daily_predictions
+        )  # Collect predictions for each day
+        current_date += timedelta(days=1)  # Move to the next day
 
-    # Plot October predictions
-    plt.plot(
-        df_oct["date"] + " " + df_oct["hour"].astype(str) + ":00",
-        df_oct["prediction"],
-        label="October 2006",
-        color="b",
+    return monthly_predictions
+
+
+def plot_predictions(ax, predictions, model_type, month, color):
+    """Plot the predictions for the entire month on the given subplot axes."""
+    df = pd.DataFrame(predictions)
+
+    # Combine date and hour to create labels for the x-axis
+    x_labels = df["date"] + " " + df["hour"].astype(str) + ":00"
+
+    # Plot predictions
+    ax.plot(
+        x_labels,
+        df["prediction"],
+        label=f"{model_type.upper()} Predictions for {month}",
+        color=color,
     )
 
-    # Plot November predictions
-    plt.plot(
-        df_nov["date"] + " " + df_nov["hour"].astype(str) + ":00",
-        df_nov["prediction"],
-        label="November 2006",
-        color="r",
-    )
+    # Set up clean x-axis ticks (fewer ticks)
+    ax.set_xticks(np.arange(0, len(x_labels), 2))  # Show fewer ticks (every 2 entries)
+    ax.set_xticklabels(
+        x_labels[::2], rotation=45, ha="right", fontsize=6
+    )  # Rotate and format labels
 
-    plt.xticks(rotation=45)
-    plt.xlabel("Date and Hour")
-    plt.ylabel("Predicted Traffic Flow (Vehicles per 15 Minutes)")
-    plt.title("Traffic Flow Predictions for October vs November 2006")
-    plt.legend()
-    plt.tight_layout()
-    plt.show()
+    ax.set_xlabel("Date and Hour")
+    ax.set_ylabel("Predicted Traffic Flow (Vehicles per 15 Minutes)")
+    ax.set_title(f"{model_type.upper()} Predictions for {month} 2006")
+    ax.legend(
+        loc="upper right"
+    )  # Ensure the legend is in the upper-right corner for all plots
 
 
 def main():
@@ -84,7 +91,9 @@ def main():
     # SCATS site and direction to predict for
     scats_num = "2000"
     direction = "W"
-    model_type = "lstm"  # Can be changed to 'gru', 'cnn', or 'saes'
+
+    # Define the list of model types to evaluate
+    model_types = ["lstm", "gru", "cnn", "saes"]
 
     # Date ranges for October and November 2006
     start_oct = datetime(2006, 10, 1)
@@ -93,20 +102,38 @@ def main():
     start_nov = datetime(2006, 11, 1)
     end_nov = datetime(2006, 11, 30)
 
-    # Get predictions for October
-    print("Predicting for October 2006...")
-    oct_predictions = predict_for_date_range(
-        scats_num, direction, model_type, start_oct, end_oct
-    )
+    # Open a single PDF file to save all plots
+    pdf_filename = "traffic_flow_predictions_oct_nov_2006.pdf"
+    with PdfPages(pdf_filename) as pdf:
+        fig, axes = plt.subplots(
+            2, 4, figsize=(20, 10)
+        )  # 2 rows and 4 columns for 8 total plots
+        axes = axes.flatten()  # Flatten axes to easily iterate over
 
-    # Get predictions for November
-    print("Predicting for November 2006...")
-    nov_predictions = predict_for_date_range(
-        scats_num, direction, model_type, start_nov, end_nov
-    )
+        for i, model_type in enumerate(model_types):
+            # Predict for the entire month of October
+            print(f"Predicting for October 2006 using {model_type.upper()}...")
+            oct_predictions = predict_for_month(
+                scats_num, direction, model_type, start_oct, end_oct
+            )
 
-    # Plot comparison
-    plot_comparison(oct_predictions, nov_predictions)
+            # Predict for the entire month of November
+            print(f"Predicting for November 2006 using {model_type.upper()}...")
+            nov_predictions = predict_for_month(
+                scats_num, direction, model_type, start_nov, end_nov
+            )
+
+            # Plot predictions for October in the first row (color blue)
+            plot_predictions(axes[i], oct_predictions, model_type, "October", "b")
+
+            # Plot predictions for November in the second row (color red)
+            plot_predictions(axes[i + 4], nov_predictions, model_type, "November", "r")
+
+        plt.tight_layout()  # Adjust subplots to fit into the figure area
+        pdf.savefig(fig)  # Save the entire figure with subplots to the PDF
+        plt.close()
+
+    print(f"Predictions saved to {pdf_filename}")
 
 
 if __name__ == "__main__":
