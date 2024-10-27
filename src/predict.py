@@ -173,17 +173,48 @@ def predict_new_model(scats_num, date_time, direction, model_type="lstm"):
         print(f"Error in prediction: {str(e)}")
         return None
 
+def predict_individual_model(scats_num, date_time, direction, model_type="lstm"):
+    global all_models
+
+
+    # load the model into all_models
+    model_path = f"{NEW_MODEL_DIR}/{scats_num}_{model_type}.keras"
+    model = load_model(model_path)
+
+    all_models[scats_num + "_" + model_type] = {
+        "model": model,
+        "flow_csv": pd.read_csv(f"{CSV_DIR}/{scats_num}_trafficflow.csv", encoding="utf-8").fillna(0),
+        "scaler": np.load(f"{NEW_MODEL_DIR}/{scats_num}_{model_type}_scalers.npz", allow_pickle=True)
+    }
+
+    logger.log(f"Model loaded successfully for {scats_num} -> {model_type}")
+
+    flow = predict_new_model(scats_num, date_time, direction, model_type)
+
+    print("")
+
+    return flow
+
 
 def main():
-
-    init()
+    global NEW_MODEL_DIR
 
     date_time = "1/10/2006 00:00"
     direction = "S"
     scats_num = "3126"
 
+    NEW_MODEL_DIR = "./saved_test_models"
+
+    predict_individual_model(scats_num, date_time, direction, "saes")
+
+    NEW_MODEL_DIR = "./saved_new_models"
+
+    predict_individual_model(scats_num, date_time, direction, "lstm")
+    predict_individual_model(scats_num, date_time, direction, "gru")
+    predict_individual_model(scats_num, date_time, direction, "cnn")
+
     #predict_new_model(scats_num,date_time,direction, "saes")
-    predict_new_model(scats_num,date_time,direction, "lstm")
+    #predict_new_model(scats_num,date_time,direction, "lstm")
     #predict_new_model(scats_num,date_time,direction, "gru")
     #predict_new_model(scats_num,date_time,direction, "cnn")
 

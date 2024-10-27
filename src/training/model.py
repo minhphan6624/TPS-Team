@@ -8,7 +8,9 @@ from keras.layers import (
     Dense,
     Dropout,
     Activation,
+    BatchNormalization
 )
+from keras.regularizers import l2
 from keras.models import Sequential
 import tensorflow as tf
 
@@ -28,29 +30,73 @@ def get_gru(units):
     model.add(Dense(units[3], activation='sigmoid'))
     return model
 
-def _get_sae(inputs, hidden, output):
+
+def _get_sae(inputs, hidden, output, dropout_rate=0.3):
     model = Sequential()
-    model.add(Dense(hidden, input_shape=(inputs,), name='hidden'))
-    model.add(Activation('sigmoid'))
-    model.add(Dropout(0.2))
-    model.add(Dense(output, activation='sigmoid'))
+    
+    model.add(Dense(
+        hidden,
+        input_shape=(inputs,),
+        kernel_regularizer=l2(0.01),
+        name='hidden'
+    ))
+    model.add(BatchNormalization())
+    model.add(Activation('relu'))
+    model.add(Dropout(dropout_rate))
+    
+    model.add(Dense(
+        output,
+        kernel_regularizer=l2(0.01),
+        activation='sigmoid'
+    ))
+    
     return model
 
-def get_saes(layers):
-    # Adjust input size for 14 features * 4 lags = 56
-    sae1 = _get_sae(56, layers[1], layers[-1])
-    sae2 = _get_sae(layers[1], layers[2], layers[-1])
-    sae3 = _get_sae(layers[2], layers[3], layers[-1])
+def get_saes(layers, dropout_rate=0.3):
+    # Individual autoencoders
+    sae1 = _get_sae(56, layers[1], layers[-1], dropout_rate)
+    sae2 = _get_sae(layers[1], layers[2], layers[-1], dropout_rate)
+    sae3 = _get_sae(layers[2], layers[3], layers[-1], dropout_rate)
     
+    # Combined stacked autoencoder
     saes = Sequential()
-    saes.add(Dense(layers[1], input_shape=(56,), name='hidden1'))
-    saes.add(Activation('sigmoid'))
-    saes.add(Dense(layers[2], name='hidden2'))
-    saes.add(Activation('sigmoid'))
-    saes.add(Dense(layers[3], name='hidden3'))
-    saes.add(Activation('sigmoid'))
-    saes.add(Dropout(0.2))
-    saes.add(Dense(layers[4], activation='sigmoid'))
+    
+    # First hidden layer
+    saes.add(Dense(
+        layers[1],
+        input_shape=(56,),
+        kernel_regularizer=l2(0.01),
+        name='hidden1'
+    ))
+    saes.add(BatchNormalization())
+    saes.add(Activation('relu'))
+    
+    # Second hidden layer
+    saes.add(Dense(
+        layers[2],
+        kernel_regularizer=l2(0.01),
+        name='hidden2'
+    ))
+    saes.add(BatchNormalization())
+    saes.add(Activation('relu'))
+    
+    # Third hidden layer
+    saes.add(Dense(
+        layers[3],
+        kernel_regularizer=l2(0.01),
+        name='hidden3'
+    ))
+    saes.add(BatchNormalization())
+    saes.add(Activation('relu'))
+    
+    saes.add(Dropout(dropout_rate))
+    
+    # Output layer
+    saes.add(Dense(
+        layers[4],
+        kernel_regularizer=l2(0.01),
+        activation='sigmoid'
+    ))
     
     return [sae1, sae2, sae3, saes]
 
