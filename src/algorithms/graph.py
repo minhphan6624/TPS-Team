@@ -202,6 +202,8 @@ def generate_graph_old():
 
         # Find the closest SCAT based on longitude and latitude
         for _, row in first_loc_df.iterrows():
+
+            # calculate the euclidean distance between the scat and the row
             dist = math.sqrt(
                 (row["NB_LONGITUDE"] - longitude) ** 2
                 + (row["NB_LATITUDE"] - latitude) ** 2
@@ -252,6 +254,15 @@ def get_all_scats():
 
     return df["SCATS Number"].unique()
 
+def does_scat_exist(scat_number):
+    global df
+
+    if scat_number == '' or scat_number is None:
+        return False
+
+    logger.log(f"Checking if SCAT number {scat_number} exists in the dataset...")
+
+    return int(scat_number) in df["SCATS Number"].values
 
 def get_coords_by_scat(scat_number):
     global df

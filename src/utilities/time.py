@@ -21,6 +21,13 @@ def round_to_nearest_15_minutes(time_str):
 
     return time_obj.strftime("%H:%M")
 
+def format_date_universal(date_str):
+    date_obj = datetime.strptime(date_str, '%d/%m/%Y')
+    day = str(date_obj.day)
+    month = str(date_obj.month)
+    year = str(date_obj.year)
+    return f"{day}/{month}/{year}"
+
 def get_day_of_week(date):
     # Parse the date string
     date = datetime.strptime(date, "%d/%m/%Y")

@@ -24,7 +24,7 @@ TEST_CSV = f"{SCATS_CSV_DIR}/970_N_trafficflow.csv"
 SCATS_CSV_DIR_DIRECTION = "../training_data/new_traffic_flows"
 TEST_CSV_DIRECTION = f"{SCATS_CSV_DIR_DIRECTION}/970_trafficflow.csv"
 
-MODEL_DIR = "./saved_new_models/"
+MODEL_DIR = "./saved_test_models/"
 
 # Models with input shape reflecting 14 features
 # (1 for flow + 5 for temporal + 8 for direction)
@@ -169,6 +169,49 @@ class ModelTrainer:
                     print_loss,
                 )
 
+    def train_one_model(self, one_model):
+        one_model_data = one_model.split("_")
+
+        scat_number = one_model_data[0]
+        model_type = one_model_data[1]
+
+        print(f"Training one model: {scat_number} {model_type}")
+
+        config = {"batch": BATCH_SIZE, "epochs": EPOCHS}
+
+        # Load in traffic flow data
+        csv_path = f"{SCATS_CSV_DIR_DIRECTION}/{scat_number}_trafficflow.csv"
+        df = pd.read_csv(csv_path, encoding="utf-8").fillna(0)
+
+        (
+            X_train,
+            y_train,
+            self.flow_scaler,
+            self.temporal_scaler,
+            self.direction_encoder,
+        ) = process_temporal_data(df, LAG)
+
+        # For non-SAES models, reshape to (samples, timesteps, features)
+        num_features = X_train.shape[2]  # Should be 14
+        X_train_reshaped = np.reshape(
+            X_train, (X_train.shape[0], X_train.shape[1], num_features)
+        )
+
+        # For SAES, flatten the features
+        X_train_saes = np.reshape(X_train, (X_train.shape[0], -1))
+
+        model_name = f"{scat_number}_{model_type}"
+        model_instance = MODELS.get(model_type)
+
+        if model_type == "saes":
+            self.train_saes(
+                model_instance, X_train_saes, y_train, model_name, config, False
+            )
+        else:
+            self.train_model(
+                model_instance, X_train_reshaped, y_train, model_name, config, False
+            )
+
     def train_scats(self, model_types):
         for path in Path(SCATS_CSV_DIR_DIRECTION).iterdir():
             if path.is_file():
@@ -208,11 +251,17 @@ def main(argv):
         "--scats", help="Check if --scats is present", action="store_true"
     )
     parser.add_argument("--loss", help="Save loss history", action="store_true")
+    parser.add_argument(
+        "--one_model",
+        help="Train just one scat model",
+    )
 
     args = parser.parse_args()
     trainer = ModelTrainer()
 
-    if args.scats:
+    if args.one_model:
+        trainer.train_one_model(args.one_model)
+    elif args.scats:
         trainer.train_scats(args.model)
     else:
         trainer.train_models(args.model, None, TEST_CSV_DIRECTION, args.loss)

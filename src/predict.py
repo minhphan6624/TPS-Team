@@ -115,13 +115,25 @@ def predict_new_model(scats_num, date_time, direction, model_type="lstm"):
             )
 
         model = model_data["model"]
-        df = model_data["flow_csv"]
+        df = model_data["flow_csv"].copy()  # Create a copy to avoid modifying original
         saved_data = model_data["scaler"]
 
         # Load the saved data
         flow_scaler = saved_data["flow_scaler"].item()
         temporal_scaler = saved_data["temporal_scaler"].item()
         direction_encoder = saved_data["direction_encoder"].item()
+
+        # Process historical data
+        df["datetime"] = pd.to_datetime(df["15 Minutes"], dayfirst=True)
+
+        # Add dummy direction if less than 4 directions
+        unique_directions = df["direction"].unique()
+
+        # If we have less than 4 directions, add a dummy direction
+        if len(unique_directions) < 4:
+            first_direction_data = df[df["direction"] == unique_directions[0]].copy()
+            first_direction_data["direction"] = "D"
+            df = pd.concat([df, first_direction_data])
 
         # Convert input datetime string to datetime object
         target_datetime = pd.to_datetime(date_time, format="%d/%m/%Y %H:%M")
@@ -145,12 +157,10 @@ def predict_new_model(scats_num, date_time, direction, model_type="lstm"):
         # Encode direction
         direction_encoded = direction_encoder.transform([[direction]])
 
-        # Process historical data
-        df["datetime"] = pd.to_datetime(df["15 Minutes"], dayfirst=True)
         df = df.sort_values("datetime")
 
         # Find the last 4 flow values before target_datetime
-        mask = df["datetime"] < target_datetime
+        mask = df["datetime"] <= target_datetime
         recent_flows = df[mask].tail(4)["Lane 1 Flow (Veh/15 Minutes)"].values
 
         if len(recent_flows) < 4:
@@ -189,16 +199,56 @@ def predict_new_model(scats_num, date_time, direction, model_type="lstm"):
         return None
 
 
+def predict_individual_model(scats_num, date_time, direction, model_type="lstm"):
+    global all_models
+
+    # load the model into all_models
+    model_path = f"{NEW_MODEL_DIR}/{scats_num}_{model_type}.keras"
+    model = load_model(model_path)
+
+    all_models[scats_num + "_" + model_type] = {
+        "model": model,
+        "flow_csv": pd.read_csv(
+            f"{CSV_DIR}/{scats_num}_trafficflow.csv", encoding="utf-8"
+        ).fillna(0),
+        "scaler": np.load(
+            f"{NEW_MODEL_DIR}/{scats_num}_{model_type}_scalers.npz", allow_pickle=True
+        ),
+    }
+
+    logger.log(f"Model loaded successfully for {scats_num} -> {model_type}")
+
+    flow = predict_new_model(scats_num, date_time, direction, model_type)
+
+    print("")
+
+    return flow
+
+
 def main():
+    global NEW_MODEL_DIR
 
-    date_time = "25/10/2006 01:00"
-    direction = "W"
-    scats_num = "2000"
+    date_time = "1/10/2006 00:00"
+    direction = "S"
+    scats_num = "3126"
 
-    predict_new_model(scats_num, date_time, direction, "saes")
-    predict_new_model(scats_num, date_time, direction, "lstm")
-    predict_new_model(scats_num, date_time, direction, "gru")
-    predict_new_model(scats_num, date_time, direction, "cnn")
+    NEW_MODEL_DIR = "./saved_test_models"
+
+    predict_individual_model(scats_num, date_time, direction, "saes")
+
+    NEW_MODEL_DIR = "./saved_new_models"
+
+    predict_individual_model(scats_num, date_time, direction, "lstm")
+    predict_individual_model(scats_num, date_time, direction, "gru")
+
+    NEW_MODEL_DIR = "./saved_test_models"
+
+    predict_individual_model(scats_num, date_time, direction, "cnn")
+
+    # predict_new_model(scats_num,date_time,direction, "saes")
+    # predict_new_model(scats_num,date_time,direction, "lstm")
+    # predict_new_model(scats_num,date_time,direction, "gru")
+    # predict_new_model(scats_num,date_time,direction, "cnn")
 
     """
     # Load Keras models and predict traffic flow including directions

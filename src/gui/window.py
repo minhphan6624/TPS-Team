@@ -11,6 +11,8 @@ from PyQt5.QtWidgets import (
     QComboBox
 )
 from PyQt5 import QtWebEngineWidgets, QtCore, QtWidgets
+from PyQt5.QtGui import QIcon
+from PyQt5.QtWidgets import QApplication, QMainWindow, QPushButton, QVBoxLayout, QWidget, QMessageBox
 from folium import plugins, IFrame
 import qdarktheme
 import folium as folium
@@ -29,7 +31,7 @@ import main as main
 from utilities.time import *
 
 # Constants
-WINDOW_TITLE = "TrafficPredictionSystem"
+WINDOW_TITLE = f"Traffic Prediction System - v{main.VERSION} - Developed by Daniel, Jeremy, Nicola & Minh"
 WINDOW_SIZE = (1200, 500)
 WINDOW_LOCATION = (160, 70)
 
@@ -37,7 +39,6 @@ WINDOW_LOCATION = (160, 70)
 graph = None
 map_widget = None
 selected_model = "lstm"  # Default model
-
 
 def update_map(html):
     global map_widget
@@ -57,7 +58,6 @@ def create_marker(scat, map_obj, color="green", size=30, tooltip=None, end=False
         """
     
     if end:
-        tip = "End: " + tip
         html = f"""
         <div style="font-family: Arial; font-size: 11px; padding: 2px; text-align: center; min-width: 60px;">
         <b>End Scat: {scat}</b>
@@ -92,7 +92,6 @@ def create_circle_marker(scat, map_obj, color="grey", size=2, tooltip=None, star
         </div>
         """
     if start:
-        tip = "Start: " + tip
         html = f"""
         <div style="font-family: Arial; font-size: 11px; padding: 2px; text-align: center; min-width: 60px;">
         <b>Start Scat: {scat}</b>
@@ -107,7 +106,6 @@ def create_circle_marker(scat, map_obj, color="grey", size=2, tooltip=None, star
         color=color,
         fill=True,
         fill_color=color,
-        fill_opacity=0.6,
         popup=popup,
         tooltip=tip,
     ).add_to(map_obj)
@@ -118,7 +116,7 @@ def create_popup(index, time, distance):
         other = " - Fastest Path"
 
     html = f"""
-     <div style="font-family: Arial; font-size: 10px; width: 150px;">
+     <div style="font-family: Arial; font-size: 10px; width: 110px;">
         <div style="padding: 4px; border-bottom: 1px solid #dee2e6;">
             <b>Path {index+1} {other}</b>
         </div>
@@ -134,7 +132,7 @@ def create_popup(index, time, distance):
         </table>
     </div>
     """
-    popup = folium.Popup(html, max_width=160)
+    popup = folium.Popup(html, max_width=130)
 
     return popup
 
@@ -150,8 +148,33 @@ def get_threshold_color(flow):
     elif flow > 250:
         return "red"
 
-def run_pathfinding(start, end, datetime):
+def show_info_message(text, title):
+    msg = QMessageBox()
+    msg.setIcon(QMessageBox.Information)
+    msg.setText(text)
+    msg.setWindowTitle(title)
+    msg.setStandardButtons(QMessageBox.Ok)
+    msg.setWindowIcon(QIcon('assets/app_icon.png'))
+    msg.exec_()
+
+def run_pathfinding(start, end, date_time):
     global graph, menu_layout
+
+    startCheck = graph_maker.does_scat_exist(start)
+    endCheck = graph_maker.does_scat_exist(end)
+
+    # Check if start and end scat numbers exist.
+    if startCheck  == False and endCheck == False:
+        show_info_message("Both SCAT numbers do not exist. Please enter a valid SCAT number.", "Invalid SCAT Number")
+        return
+    
+    if startCheck == False:
+        show_info_message(f"Start SCAT number {start} does not exist. Please enter a valid SCAT number.", "Invalid SCAT Number")
+        return
+    
+    if endCheck == False:
+        show_info_message("End SCAT number {end} does not exist. Please enter a valid SCAT number.", "Invalid SCAT Number")
+        return
 
     # clear flow data
     astar.flow_dict = {}
@@ -169,8 +192,8 @@ def run_pathfinding(start, end, datetime):
     logger.log(f"Using start and end node [{start}, {end}]")
 
     # format datetime
-    datetime_split = datetime.split(" ")
-    date = datetime_split[0]
+    datetime_split = date_time.split(" ")
+    date = format_date_universal(datetime_split[0])
     time = round_to_nearest_15_minutes(datetime_split[1])
     formatted_datetime = f"{date} {time}"
 
@@ -235,7 +258,7 @@ def run_pathfinding(start, end, datetime):
         display_index -= 1
 
      # add start and end markers on the map with the displayed scat number
-    create_circle_marker(start, map_obj, color="red",
+    create_circle_marker(start, map_obj, color="lightgreen",
                          size=3, tooltip=f"Start - {start}", start=True)
     create_marker(end, map_obj, tooltip=f"End - {end}", end=True)
 
@@ -245,9 +268,9 @@ def run_pathfinding(start, end, datetime):
     path_label_str = ""
 
     if len(paths) == 1:
-        path_label_str = f"Pathfinding complete. {len(paths)} path found. \nDate: {get_day_of_week(date)} {format_date_to_words(datetime)} \nModel: {selected_model.upper()}"
+        path_label_str = f"Pathfinding complete. {len(paths)} path found. \nDate: {get_day_of_week(date)} {format_date_to_words(date_time)} \nModel: {selected_model.upper()}"
     else:
-        path_label_str = f"Pathfinding complete. {len(paths)} paths found. \nDate: {get_day_of_week(date)} {format_date_to_words(datetime)} \nModel: {selected_model.upper()}"
+        path_label_str = f"Pathfinding complete. {len(paths)} paths found. \nDate: {get_day_of_week(date)} {format_date_to_words(date_time)} \nModel: {selected_model.upper()}"
     
     if (menu_layout.parent().findChild(QLabel, "path_display") is not None):
         menu_layout.parent().findChild(QLabel, "path_display").setText(path_label_str)
@@ -346,13 +369,6 @@ def make_menu():
     )
     menu_layout.addWidget(run_button)
 
-    # Button to reset the map (doesn't currently work as expected)
-    reset_button = QPushButton("Reset")
-    reset_button.clicked.connect(
-        lambda: update_map(create_map()._repr_html_()))
-    # updates the map but the visual doesn't update
-    menu_layout.addWidget(reset_button)
-
     # Add a stretcher to push buttons to the top
     menu_layout.addStretch()
 
@@ -436,6 +452,8 @@ def run():
     window.setGeometry(
         WINDOW_LOCATION[0], WINDOW_LOCATION[1], WINDOW_SIZE[0], WINDOW_SIZE[1]
     )
+
+    window.setWindowIcon(QIcon('assets/app_icon.png'))
 
     graph_maker.init()
     prediction_module.init()
