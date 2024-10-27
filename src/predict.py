@@ -98,13 +98,25 @@ def predict_new_model(scats_num, date_time, direction, model_type="lstm"):
             raise FileNotFoundError(f"Model not found for scats {scats_num} and type {model_type}")
 
         model = model_data["model"]
-        df = model_data["flow_csv"]
+        df = model_data["flow_csv"].copy()  # Create a copy to avoid modifying original
         saved_data = model_data["scaler"]
 
         # Load the saved data
         flow_scaler = saved_data['flow_scaler'].item()
         temporal_scaler = saved_data['temporal_scaler'].item()
         direction_encoder = saved_data['direction_encoder'].item()
+
+        # Process historical data
+        df['datetime'] = pd.to_datetime(df['15 Minutes'], dayfirst=True)
+        
+        # Add dummy direction if less than 4 directions
+        unique_directions = df['direction'].unique()
+
+        # If we have less than 4 directions, add a dummy direction
+        if len(unique_directions) < 4:
+            first_direction_data = df[df['direction'] == unique_directions[0]].copy()
+            first_direction_data['direction'] = 'D'
+            df = pd.concat([df, first_direction_data])
 
         # Convert input datetime string to datetime object
         target_datetime = pd.to_datetime(date_time, format='%d/%m/%Y %H:%M')
@@ -124,8 +136,6 @@ def predict_new_model(scats_num, date_time, direction, model_type="lstm"):
         # Encode direction
         direction_encoded = direction_encoder.transform([[direction]])
         
-        # Process historical data
-        df['datetime'] = pd.to_datetime(df['15 Minutes'], dayfirst=True)
         df = df.sort_values('datetime')
         
         # Find the last 4 flow values before target_datetime
@@ -166,14 +176,16 @@ def predict_new_model(scats_num, date_time, direction, model_type="lstm"):
 
 def main():
 
-    date_time = "25/10/2006 01:00"
-    direction = "W"
-    scats_num = "2000"
+    init()
 
-    predict_new_model(scats_num,date_time,direction, "saes")
+    date_time = "1/10/2006 00:00"
+    direction = "S"
+    scats_num = "3126"
+
+    #predict_new_model(scats_num,date_time,direction, "saes")
     predict_new_model(scats_num,date_time,direction, "lstm")
-    predict_new_model(scats_num,date_time,direction, "gru")
-    predict_new_model(scats_num,date_time,direction, "cnn")
+    #predict_new_model(scats_num,date_time,direction, "gru")
+    #predict_new_model(scats_num,date_time,direction, "cnn")
 
 
     '''
