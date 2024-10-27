@@ -129,7 +129,7 @@ def predict_new_model(scats_num, date_time, direction, model_type="lstm"):
         df = df.sort_values('datetime')
         
         # Find the last 4 flow values before target_datetime
-        mask = df['datetime'] < target_datetime
+        mask = df['datetime'] <= target_datetime
         recent_flows = df[mask].tail(4)['Lane 1 Flow (Veh/15 Minutes)'].values
         
         if len(recent_flows) < 4:
