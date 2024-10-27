@@ -21,7 +21,6 @@ import folium as folium
 import sys
 
 # Project Imports
-import algorithms.bfs as bfs
 import algorithms.astar as astar
 import algorithms.graph as graph_maker
 import utilities.logger as logger
