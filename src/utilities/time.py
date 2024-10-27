@@ -16,8 +16,15 @@ def round_to_nearest_15_minutes(time_str):
         raise ValueError(f"Unable to parse time string: {time_str}")
 
     # Round the time to the nearest 15 minutes
-    rounded_minute = (time_obj.minute // 15) * 15
-    time_obj = time_obj.replace(minute=rounded_minute, second=0, microsecond=0)
+    minutes = time_obj.minute + time_obj.second / 60.0
+    rounded_minutes = int((minutes + 7.5) // 15 * 15)
+
+    #round up to the next hour if the time is 60 minutes
+    if rounded_minutes == 60:
+        time_obj = time_obj + timedelta(hours=1)
+        rounded_minutes = 0
+    
+    time_obj = time_obj.replace(minute=rounded_minutes, second=0, microsecond=0)
 
     return time_obj.strftime("%H:%M")
 
