@@ -60,7 +60,7 @@ The project uses SCATS traffic flow data from October 2006, provided by VicRoads
 - Traffic volume recorded at 15-minute intervals across multiple intersections.
 - Geographic coordinates (latitude, longitude) for each SCATS site.
 
-Preprocessing steps:
+## Preprocessing steps:
 - Merge directional data into unified datasets for each SCATS site.
 - Normalize traffic flow and temporal features using MinMaxScaler.
 - Encode categorical directional data via one-hot encoding.
@@ -76,11 +76,6 @@ Preprocessing steps:
 - Models achieved high accuracy for October 2006 data, demonstrating robust prediction capabilities.
 - The A* algorithm effectively incorporated traffic predictions to recommend efficient routes.
 - User-friendly GUI enhanced interaction and visualization of traffic flow and routes.
-
-## Future Enhancements
-- Extend predictions to larger datasets and additional cities.
-- Integrate real-time traffic data for dynamic route optimization.
-- Enhance the GUI with additional visualization features and model comparisons.
 
 ## Contributors
 - Quang Minh Phan
