@@ -69,7 +69,8 @@ Preprocessing steps:
 - **Programming Languages:** Python
 - **Libraries:** TensorFlow, PyTorch, Scikit-learn, Pandas, NumPy
 - **Visualization Tools:** Folium, PyQt5
-- **Algorithms:** A* search, LSTM, GRU, CNN, Stacked Autoencoders
+- **Algorithms:** A* search
+- **Models:** LSTM, GRU, CNN, Stacked Autoencoders
 
 ## Results
 - Models achieved high accuracy for October 2006 data, demonstrating robust prediction capabilities.
